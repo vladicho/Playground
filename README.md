@@ -20,6 +20,8 @@ Cloudflare AI Search.
   comandos `rclone copyto` para preparar o próximo lote em `rag-teste`.
 - Caderno de estudos local para salvar respostas, pesquisar materiais, escrever
   anotações, acompanhar revisões e imprimir o conjunto em PDF.
+- Revisão espaçada em 1, 3, 7, 14 e 30 dias, com níveis de domínio, pendências,
+  sequência diária e progresso por livro e assunto.
 - Nenhum token ou credencial é enviado ao navegador.
 - O domínio deve ser protegido pelo Cloudflare Access antes de ser liberado.
 
