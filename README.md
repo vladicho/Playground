@@ -18,6 +18,8 @@ Cloudflare AI Search.
   para os cinco documentos atualmente indexados no RAG.
 - Fila local de até 10 livros, persistida no navegador, com geração segura dos
   comandos `rclone copyto` para preparar o próximo lote em `rag-teste`.
+- Caderno de estudos local para salvar respostas, pesquisar materiais, escrever
+  anotações, acompanhar revisões e imprimir o conjunto em PDF.
 - Nenhum token ou credencial é enviado ao navegador.
 - O domínio deve ser protegido pelo Cloudflare Access antes de ser liberado.
 
