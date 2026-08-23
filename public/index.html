@@ -23,6 +23,7 @@
           <span class="status"><i></i> Base conectada</span>
           <button id="catalog-open" class="ghost-button catalog-button" type="button">Catálogo</button>
           <button id="notebook-open" class="ghost-button" type="button">Caderno</button>
+          <button id="plan-open" class="ghost-button" type="button">Plano</button>
           <button id="clear-chat" class="ghost-button" type="button">Limpar</button>
         </div>
       </header>
@@ -231,6 +232,78 @@
           <small>Use “Imprimir caderno” e escolha “Salvar como PDF”.</small>
           <button id="notebook-print" type="button" disabled>Imprimir caderno</button>
         </footer>
+      </section>
+    </dialog>
+
+    <dialog id="plan-dialog" class="catalog-dialog plan-dialog" aria-labelledby="plan-title">
+      <section class="catalog-shell plan-shell">
+        <header class="catalog-header">
+          <div>
+            <p class="eyebrow">Rotina de aprendizagem</p>
+            <h2 id="plan-title">Plano de estudos</h2>
+            <p>Metas, calendário e tempo estudado ficam somente neste navegador.</p>
+          </div>
+          <button id="plan-close" class="catalog-close" type="button" aria-label="Fechar plano">×</button>
+        </header>
+
+        <section class="plan-dashboard" aria-label="Resumo semanal">
+          <span><b id="plan-planned">0</b><small>Min planejados</small></span>
+          <span><b id="plan-studied">0</b><small>Min estudados</small></span>
+          <span><b id="plan-completed">0/0</b><small>Metas concluídas</small></span>
+          <div>
+            <label><span>Progresso semanal</span><strong id="plan-percent">0%</strong></label>
+            <progress id="plan-progress" max="100" value="0">0%</progress>
+          </div>
+        </section>
+
+        <details class="plan-settings">
+          <summary>Configurar e gerar semana</summary>
+          <div class="plan-settings-body">
+            <fieldset>
+              <legend>Dias de estudo</legend>
+              <label><input type="checkbox" name="study-day" value="1" checked /> Seg</label>
+              <label><input type="checkbox" name="study-day" value="2" checked /> Ter</label>
+              <label><input type="checkbox" name="study-day" value="3" checked /> Qua</label>
+              <label><input type="checkbox" name="study-day" value="4" checked /> Qui</label>
+              <label><input type="checkbox" name="study-day" value="5" checked /> Sex</label>
+              <label><input type="checkbox" name="study-day" value="6" checked /> Sáb</label>
+              <label><input type="checkbox" name="study-day" value="0" /> Dom</label>
+            </fieldset>
+            <label>
+              <span>Minutos por dia</span>
+              <select id="plan-default-minutes">
+                <option value="25">25 minutos</option>
+                <option value="45" selected>45 minutos</option>
+                <option value="60">60 minutos</option>
+                <option value="90">90 minutos</option>
+              </select>
+            </label>
+            <button id="plan-generate" type="button">Gerar metas da semana</button>
+          </div>
+        </details>
+
+        <form id="plan-add-form" class="plan-add-form">
+          <label><span class="sr-only">Meta de estudo</span><input id="plan-task-title" maxlength="180" placeholder="Nova meta de estudo…" required /></label>
+          <label><span class="sr-only">Data</span><input id="plan-task-date" type="date" required /></label>
+          <label><span class="sr-only">Duração em minutos</span><input id="plan-task-minutes" type="number" min="5" max="240" step="5" value="45" required /></label>
+          <button type="submit">Adicionar</button>
+        </form>
+
+        <section id="study-timer" class="study-timer" hidden aria-live="polite">
+          <div><small>Sessão atual</small><strong id="study-timer-title">Estudo</strong></div>
+          <time id="study-timer-time">45:00</time>
+          <div>
+            <button id="study-timer-toggle" type="button">Pausar</button>
+            <button id="study-timer-finish" type="button">Concluir</button>
+          </div>
+        </section>
+
+        <div class="plan-week-heading">
+          <button id="plan-prev-week" type="button" aria-label="Semana anterior">←</button>
+          <div><strong id="plan-week-label">Semana atual</strong><button id="plan-current-week" type="button">Hoje</button></div>
+          <button id="plan-next-week" type="button" aria-label="Próxima semana">→</button>
+        </div>
+        <div id="plan-calendar" class="plan-calendar" aria-live="polite"></div>
       </section>
     </dialog>
     <script type="module" src="/app.js"></script>
