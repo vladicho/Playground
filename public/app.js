@@ -28,7 +28,7 @@ const MODES = {
   mindmap: {
     placeholder: "Assunto do mapa mental…",
     prompt: (topic) =>
-      `Crie um mapa mental textual sobre "${topic}" usando os documentos recuperados. Comece pelo tema central e organize ramos e sub-ramos com indentação e conectores. Inclua conceitos, relações, fórmulas e exemplos somente quando sustentados pelas fontes.`,
+      `Crie um mapa mental sobre "${topic}" usando os documentos recuperados. Dê uma introdução curta e depois inclua obrigatoriamente um bloco entre as linhas "MAPA MENTAL" e "FIM DO MAPA". Dentro dele, use apenas marcadores com hífen: a primeira linha sem recuo é o tema central; ramos usam dois espaços de recuo; sub-ramos usam quatro espaços. Limite a 24 nós com textos curtos. Inclua conceitos, relações, fórmulas e exemplos somente quando sustentados pelas fontes.`,
   },
   podcast: {
     placeholder: "Assunto do roteiro de podcast…",
@@ -211,6 +211,219 @@ function renderAudioControls(article, text) {
   article.append(controls);
 }
 
+function parseMindMap(text, fallbackTitle) {
+  const allLines = text.replace(/\t/g, "  ").split("\n");
+  const start = allLines.findIndex((line) => /^\s*MAPA MENTAL\s*:?\s*$/i.test(line));
+  const end = allLines.findIndex(
+    (line, index) => index > start && /^\s*FIM DO MAPA\s*\.?\s*$/i.test(line),
+  );
+  const lines = start >= 0 ? allLines.slice(start + 1, end > start ? end : undefined) : allLines;
+  const entries = lines
+    .map((line) => {
+      const match = line.match(/^(\s*)[-•]\s+(.+?)\s*$/);
+      if (!match) return null;
+      const label = match[2].replace(/[*_#`]/g, "").trim();
+      return label ? { rawDepth: Math.floor(match[1].length / 2), label } : null;
+    })
+    .filter(Boolean)
+    .slice(0, 24);
+
+  const rootLabel = entries[0]?.label || fallbackTitle;
+  const root = { id: 0, label: rootLabel, depth: 0, parent: null, children: [] };
+  const nodes = [root];
+  const stack = [root];
+
+  for (const entry of entries.slice(1)) {
+    const depth = Math.max(1, Math.min(entry.rawDepth, 4));
+    while (stack.length > depth) stack.pop();
+    const parent = stack[depth - 1] || root;
+    const node = {
+      id: nodes.length,
+      label: entry.label,
+      depth: parent.depth + 1,
+      parent,
+      children: [],
+    };
+    parent.children.push(node);
+    nodes.push(node);
+    stack[node.depth] = node;
+    stack.length = node.depth + 1;
+  }
+
+  return nodes.length > 1 ? { root, nodes } : null;
+}
+
+function svgElement(name, attributes = {}) {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", name);
+  for (const [key, value] of Object.entries(attributes)) {
+    element.setAttribute(key, String(value));
+  }
+  return element;
+}
+
+function wrapLabel(label, limit = 24) {
+  const words = label.split(/\s+/);
+  const lines = [""];
+  for (const word of words) {
+    const current = lines.at(-1);
+    if (current && `${current} ${word}`.length > limit && lines.length < 2) {
+      lines.push(word);
+    } else {
+      lines[lines.length - 1] = current ? `${current} ${word}` : word;
+    }
+  }
+  if (lines[1]?.length > limit + 8) lines[1] = `${lines[1].slice(0, limit + 5)}…`;
+  return lines;
+}
+
+function renderMindMap(article, text, fallbackTitle) {
+  const tree = parseMindMap(text, fallbackTitle);
+  if (!tree) return;
+
+  let leafIndex = 0;
+  const setPositions = (node) => {
+    if (node.children.length === 0) {
+      node.y = 60 + leafIndex * 82;
+      leafIndex += 1;
+    } else {
+      node.children.forEach(setPositions);
+      node.y = node.children.reduce((sum, child) => sum + child.y, 0) / node.children.length;
+    }
+    node.x = 30 + node.depth * 235;
+  };
+  setPositions(tree.root);
+
+  const maxDepth = Math.max(...tree.nodes.map((node) => node.depth));
+  const width = Math.max(720, 60 + (maxDepth + 1) * 235);
+  const height = Math.max(320, 120 + Math.max(1, leafIndex - 1) * 82);
+  const svg = svgElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: `0 0 ${width} ${height}`,
+    role: "img",
+    "aria-label": `Mapa mental sobre ${fallbackTitle}`,
+  });
+  svg.classList.add("mindmap-svg");
+  svg.append(svgElement("rect", { width, height, rx: 20, fill: "#0f2119" }));
+
+  for (const node of tree.nodes.slice(1)) {
+    const parent = node.parent;
+    const path = svgElement("path", {
+      d: `M ${parent.x + 190} ${parent.y} C ${parent.x + 212} ${parent.y}, ${node.x - 22} ${node.y}, ${node.x} ${node.y}`,
+      fill: "none",
+      stroke: "#927f47",
+      "stroke-width": 2,
+      opacity: 0.72,
+    });
+    svg.append(path);
+  }
+
+  for (const node of tree.nodes) {
+    const group = svgElement("g", { transform: `translate(${node.x} ${node.y - 27})` });
+    const isRoot = node.depth === 0;
+    group.append(
+      svgElement("rect", {
+        width: 190,
+        height: 54,
+        rx: 12,
+        fill: isRoot ? "#f2cb69" : node.depth === 1 ? "#234c39" : "#173126",
+        stroke: isRoot ? "#f2cb69" : "#456d59",
+        "stroke-width": 1.5,
+      }),
+    );
+    const title = svgElement("title");
+    title.textContent = node.label;
+    group.append(title);
+    const label = svgElement("text", {
+      x: 95,
+      y: 23,
+      fill: isRoot ? "#132219" : "#f7f7ef",
+      "font-family": "Inter, system-ui, sans-serif",
+      "font-size": isRoot ? 13 : 12,
+      "font-weight": isRoot ? 800 : 650,
+      "text-anchor": "middle",
+    });
+    wrapLabel(node.label).forEach((line, index) => {
+      const span = svgElement("tspan", { x: 95, dy: index === 0 ? 0 : 16 });
+      span.textContent = line;
+      label.append(span);
+    });
+    group.append(label);
+    svg.append(group);
+  }
+
+  const panel = document.createElement("section");
+  panel.className = "mindmap-panel";
+  const toolbar = document.createElement("div");
+  toolbar.className = "mindmap-toolbar";
+  const heading = document.createElement("strong");
+  heading.textContent = "Mapa mental gráfico";
+  const actions = document.createElement("div");
+  const zoomOut = document.createElement("button");
+  zoomOut.type = "button";
+  zoomOut.textContent = "−";
+  zoomOut.setAttribute("aria-label", "Diminuir mapa");
+  const zoomIn = document.createElement("button");
+  zoomIn.type = "button";
+  zoomIn.textContent = "+";
+  zoomIn.setAttribute("aria-label", "Ampliar mapa");
+  const download = document.createElement("button");
+  download.type = "button";
+  download.textContent = "Baixar PNG";
+  actions.append(zoomOut, zoomIn, download);
+  toolbar.append(heading, actions);
+
+  const viewport = document.createElement("div");
+  viewport.className = "mindmap-viewport";
+  viewport.append(svg);
+  let zoom = 1;
+  const applyZoom = () => {
+    svg.style.width = `${Math.round(width * zoom)}px`;
+    svg.style.height = `${Math.round(height * zoom)}px`;
+  };
+  zoomOut.addEventListener("click", () => {
+    zoom = Math.max(0.65, zoom - 0.15);
+    applyZoom();
+  });
+  zoomIn.addEventListener("click", () => {
+    zoom = Math.min(1.6, zoom + 0.15);
+    applyZoom();
+  });
+  download.addEventListener("click", () => {
+    const serialized = new XMLSerializer().serializeToString(svg);
+    const source = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
+    const sourceUrl = URL.createObjectURL(source);
+    const image = new Image();
+    image.onload = () => {
+      const scale = 2;
+      const canvas = document.createElement("canvas");
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      const context = canvas.getContext("2d");
+      if (!context) {
+        URL.revokeObjectURL(sourceUrl);
+        return;
+      }
+      context.scale(scale, scale);
+      context.drawImage(image, 0, 0, width, height);
+      URL.revokeObjectURL(sourceUrl);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "mapa-mental.png";
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+      }, "image/png");
+    };
+    image.onerror = () => URL.revokeObjectURL(sourceUrl);
+    image.src = sourceUrl;
+  });
+  applyZoom();
+  panel.append(toolbar, viewport);
+  article.append(panel);
+}
+
 function setMode(mode) {
   if (!(mode in MODES) || state.busy) return;
   state.mode = mode;
@@ -298,6 +511,7 @@ async function ask(question, displayQuestion = question, mode = "ask") {
 
     state.messages.push({ role: "assistant", content: answer });
     if (mode === "podcast") renderAudioControls(assistant.article, answer);
+    if (mode === "mindmap") renderMindMap(assistant.article, answer, displayQuestion);
     renderSources(assistant.article, sources);
   } catch (error) {
     assistant.article.classList.add("error");
