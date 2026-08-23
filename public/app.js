@@ -33,6 +33,14 @@ const notebookCount = document.querySelector("#notebook-count");
 const notebookProgress = document.querySelector("#notebook-progress");
 const notebookResults = document.querySelector("#notebook-results");
 const notebookPrint = document.querySelector("#notebook-print");
+const reviewDue = document.querySelector("#review-due");
+const reviewLearning = document.querySelector("#review-learning");
+const reviewMastered = document.querySelector("#review-mastered");
+const reviewStreak = document.querySelector("#review-streak");
+const reviewPercent = document.querySelector("#review-percent");
+const reviewProgressBar = document.querySelector("#review-progress-bar");
+const bookProgressList = document.querySelector("#book-progress-list");
+const topicProgressList = document.querySelector("#topic-progress-list");
 
 const MODES = {
   ask: {
@@ -89,6 +97,38 @@ const QUEUE_STORAGE_KEY = "playground-index-queue-v1";
 const REMOTE_STORAGE_KEY = "playground-rclone-remote-v1";
 const NOTEBOOK_STORAGE_KEY = "playground-study-notebook-v1";
 const NOTEBOOK_LIMIT = 150;
+const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
+
+function addDays(value, days) {
+  const date = new Date(value);
+  const base = Number.isNaN(date.getTime()) ? new Date() : date;
+  base.setDate(base.getDate() + days);
+  return base.toISOString();
+}
+
+function normalizeNotebookEntry(entry) {
+  const createdAt = Number.isNaN(new Date(entry.createdAt).getTime())
+    ? new Date().toISOString()
+    : entry.createdAt;
+  const fallbackStage = entry.reviewed ? 1 : 0;
+  const reviewStage = Number.isInteger(entry.reviewStage)
+    ? Math.max(0, Math.min(entry.reviewStage, REVIEW_INTERVALS.length))
+    : fallbackStage;
+  const nextReviewAt = Number.isNaN(new Date(entry.nextReviewAt).getTime())
+    ? addDays(createdAt, REVIEW_INTERVALS[Math.min(reviewStage, REVIEW_INTERVALS.length - 1)])
+    : entry.nextReviewAt;
+  const reviewHistory = Array.isArray(entry.reviewHistory)
+    ? entry.reviewHistory.filter((value) => !Number.isNaN(new Date(value).getTime())).slice(-100)
+    : [];
+  return {
+    ...entry,
+    createdAt,
+    reviewed: Boolean(entry.reviewed || reviewHistory.length),
+    reviewStage,
+    nextReviewAt,
+    reviewHistory,
+  };
+}
 
 function loadNotebook() {
   try {
@@ -102,6 +142,7 @@ function loadNotebook() {
           typeof entry.title === "string" &&
           typeof entry.answer === "string",
       )
+      .map(normalizeNotebookEntry)
       .slice(0, NOTEBOOK_LIMIT);
   } catch {
     return [];
@@ -224,14 +265,166 @@ function newNotebookId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function notebookLevel(entry) {
+  if (entry.reviewStage === 0) return "Novo";
+  if (entry.reviewStage < 3) return "Aprendendo";
+  return "Dominado";
+}
+
+function isReviewDue(entry, now = Date.now()) {
+  const next = new Date(entry.nextReviewAt).getTime();
+  return !Number.isNaN(next) && next <= now;
+}
+
+function formatReviewDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "sem data";
+  if (isReviewDue({ nextReviewAt: value })) return "agora";
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(date);
+}
+
+function localDayKey(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function calculateReviewStreak() {
+  const days = new Set(
+    notebookEntries.flatMap((entry) => entry.reviewHistory || []).map(localDayKey).filter(Boolean),
+  );
+  if (days.size === 0) return 0;
+  const cursor = new Date();
+  cursor.setHours(12, 0, 0, 0);
+  if (!days.has(localDayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (days.has(localDayKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function scheduleReview(entry, rating) {
+  const now = new Date();
+  if (rating === "hard") {
+    entry.reviewStage = Math.max(0, entry.reviewStage - 1);
+  } else if (rating === "easy") {
+    entry.reviewStage = Math.min(REVIEW_INTERVALS.length, entry.reviewStage + 2);
+  } else {
+    entry.reviewStage = Math.min(REVIEW_INTERVALS.length, entry.reviewStage + 1);
+  }
+  const intervalIndex = rating === "hard"
+    ? 0
+    : Math.min(entry.reviewStage, REVIEW_INTERVALS.length - 1);
+  entry.reviewed = true;
+  entry.lastReviewedAt = now.toISOString();
+  entry.nextReviewAt = addDays(now, REVIEW_INTERVALS[intervalIndex]);
+  entry.reviewHistory = [...(entry.reviewHistory || []), now.toISOString()].slice(-100);
+  persistNotebook();
+  renderNotebook();
+}
+
+function renderReviewDashboard() {
+  const due = notebookEntries.filter((entry) => isReviewDue(entry)).length;
+  notebookOpen.textContent = due ? `Caderno (${due})` : "Caderno";
+  const learning = notebookEntries.filter(
+    (entry) => entry.reviewStage > 0 && entry.reviewStage < 3,
+  ).length;
+  const mastered = notebookEntries.filter((entry) => entry.reviewStage >= 3).length;
+  const percent = notebookEntries.length
+    ? Math.round(
+        (notebookEntries.reduce(
+          (sum, entry) => sum + Math.min(entry.reviewStage, REVIEW_INTERVALS.length),
+          0,
+        ) /
+          (notebookEntries.length * REVIEW_INTERVALS.length)) *
+          100,
+      )
+    : 0;
+  reviewDue.textContent = String(due);
+  reviewLearning.textContent = String(learning);
+  reviewMastered.textContent = String(mastered);
+  reviewStreak.textContent = String(calculateReviewStreak());
+  reviewPercent.textContent = `${percent}%`;
+  reviewProgressBar.value = percent;
+  reviewProgressBar.textContent = `${percent}%`;
+
+  const books = new Map();
+  for (const entry of notebookEntries) {
+    const names = Array.isArray(entry.sources) && entry.sources.length
+      ? [...new Set(entry.sources.map((source) => source.name || "Fonte não identificada"))]
+      : ["Sem livro identificado"];
+    for (const name of names) {
+      const current = books.get(name) || { count: 0, stages: 0, due: 0 };
+      current.count += 1;
+      current.stages += Math.min(entry.reviewStage, REVIEW_INTERVALS.length);
+      if (isReviewDue(entry)) current.due += 1;
+      books.set(name, current);
+    }
+  }
+  bookProgressList.replaceChildren();
+  const sorted = [...books].sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0], "pt-BR"));
+  if (sorted.length === 0) {
+    const empty = document.createElement("p");
+    empty.textContent = "Salve materiais com fontes para acompanhar livros.";
+    bookProgressList.append(empty);
+  }
+  for (const [name, details] of sorted) {
+    const row = document.createElement("div");
+    const label = document.createElement("span");
+    label.textContent = name;
+    const value = document.createElement("strong");
+    const progress = Math.round((details.stages / (details.count * REVIEW_INTERVALS.length)) * 100);
+    value.textContent = `${progress}%${details.due ? ` · ${details.due} pendente(s)` : ""}`;
+    row.append(label, value);
+    bookProgressList.append(row);
+  }
+
+  const topics = new Map();
+  for (const entry of notebookEntries) {
+    const current = topics.get(entry.title) || { count: 0, stages: 0, due: 0 };
+    current.count += 1;
+    current.stages += Math.min(entry.reviewStage, REVIEW_INTERVALS.length);
+    if (isReviewDue(entry)) current.due += 1;
+    topics.set(entry.title, current);
+  }
+  topicProgressList.replaceChildren();
+  const sortedTopics = [...topics].sort(
+    (a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0], "pt-BR"),
+  );
+  if (sortedTopics.length === 0) {
+    const empty = document.createElement("p");
+    empty.textContent = "Salve materiais para acompanhar assuntos.";
+    topicProgressList.append(empty);
+  }
+  for (const [name, details] of sortedTopics) {
+    const row = document.createElement("div");
+    const label = document.createElement("span");
+    label.textContent = name;
+    const value = document.createElement("strong");
+    const progress = Math.round(
+      (details.stages / (details.count * REVIEW_INTERVALS.length)) * 100,
+    );
+    value.textContent = `${progress}%${details.due ? ` · ${details.due} pendente(s)` : ""}`;
+    row.append(label, value);
+    topicProgressList.append(row);
+  }
+}
+
 function filteredNotebookEntries() {
   const query = normalizeSearch(notebookQuery.value);
   const mode = notebookMode.value;
   const status = notebookStatus.value;
   return notebookEntries.filter((entry) => {
     if (mode && entry.mode !== mode) return false;
-    if (status === "reviewed" && !entry.reviewed) return false;
-    if (status === "pending" && entry.reviewed) return false;
+    if (status === "due" && !isReviewDue(entry)) return false;
+    if (status === "new" && entry.reviewStage !== 0) return false;
+    if (status === "learning" && !(entry.reviewStage > 0 && entry.reviewStage < 3)) return false;
+    if (status === "mastered" && entry.reviewStage < 3) return false;
     if (!query) return true;
     const searchable = [
       entry.title,
@@ -256,6 +449,9 @@ function saveMaterialToNotebook(material, button) {
     sources: material.sources,
     notes: "",
     reviewed: false,
+    reviewStage: 0,
+    nextReviewAt: addDays(new Date(), REVIEW_INTERVALS[0]),
+    reviewHistory: [],
     createdAt: new Date().toISOString(),
   };
   notebookEntries.unshift(entry);
@@ -309,6 +505,29 @@ function renderNotebookBody(body, entry) {
   if (entry.mode === "mindmap") renderMindMap(body, entry.answer, entry.title);
   appendNotebookSources(body, entry.sources);
 
+  const reviewPanel = document.createElement("section");
+  reviewPanel.className = "review-actions";
+  const reviewHeading = document.createElement("div");
+  const reviewTitle = document.createElement("strong");
+  reviewTitle.textContent = "Como foi esta revisão?";
+  const reviewHint = document.createElement("small");
+  reviewHint.textContent = "A resposta define a próxima data automaticamente.";
+  reviewHeading.append(reviewTitle, reviewHint);
+  const ratingButtons = document.createElement("div");
+  for (const [rating, label] of [
+    ["hard", "Difícil · 1 dia"],
+    ["good", "Boa · avançar"],
+    ["easy", "Fácil · avançar 2"],
+  ]) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.addEventListener("click", () => scheduleReview(entry, rating));
+    ratingButtons.append(button);
+  }
+  reviewPanel.append(reviewHeading, ratingButtons);
+  body.append(reviewPanel);
+
   const noteLabel = document.createElement("label");
   noteLabel.className = "notebook-notes";
   const noteTitle = document.createElement("span");
@@ -329,10 +548,12 @@ function renderNotebookBody(body, entry) {
 function renderNotebook() {
   const matches = filteredNotebookEntries();
   const reviewed = notebookEntries.filter((entry) => entry.reviewed).length;
+  const due = notebookEntries.filter((entry) => isReviewDue(entry)).length;
   notebookCount.textContent = `${matches.length} ${matches.length === 1 ? "material exibido" : "materiais exibidos"}`;
-  notebookProgress.textContent = `${reviewed}/${notebookEntries.length} revisados`;
+  notebookProgress.textContent = `${reviewed}/${notebookEntries.length} revisados · ${due} pendente(s)`;
   notebookPrint.disabled = matches.length === 0;
   notebookResults.replaceChildren();
+  renderReviewDashboard();
 
   if (matches.length === 0) {
     const empty = document.createElement("p");
@@ -348,11 +569,13 @@ function renderNotebook() {
     const card = document.createElement("article");
     card.className = "notebook-card";
     card.classList.toggle("reviewed", Boolean(entry.reviewed));
+    card.classList.toggle("due", isReviewDue(entry));
+    card.classList.toggle("mastered", entry.reviewStage >= 3);
 
     const header = document.createElement("header");
     const heading = document.createElement("div");
     const meta = document.createElement("p");
-    meta.textContent = `${MODE_LABELS[entry.mode] || MODE_LABELS.ask} · ${formatNotebookDate(entry.createdAt)}`;
+    meta.textContent = `${MODE_LABELS[entry.mode] || MODE_LABELS.ask} · ${notebookLevel(entry)} · próxima: ${formatReviewDate(entry.nextReviewAt)}`;
     const title = document.createElement("h3");
     title.textContent = entry.title;
     heading.append(meta, title);
@@ -362,13 +585,10 @@ function renderNotebook() {
     const open = document.createElement("button");
     open.type = "button";
     open.textContent = "Abrir";
-    const review = document.createElement("button");
-    review.type = "button";
-    review.textContent = entry.reviewed ? "Revisado ✓" : "Marcar revisado";
     const remove = document.createElement("button");
     remove.type = "button";
     remove.textContent = "Excluir";
-    controls.append(open, review, remove);
+    controls.append(open, remove);
     header.append(heading, controls);
 
     const body = document.createElement("div");
@@ -378,11 +598,6 @@ function renderNotebook() {
       body.hidden = !body.hidden;
       open.textContent = body.hidden ? "Abrir" : "Fechar";
       if (!body.hidden) renderNotebookBody(body, entry);
-    });
-    review.addEventListener("click", () => {
-      entry.reviewed = !entry.reviewed;
-      persistNotebook();
-      renderNotebook();
     });
     remove.addEventListener("click", () => {
       if (!window.confirm(`Excluir "${entry.title}" do caderno?`)) return;
@@ -417,7 +632,7 @@ function printNotebook() {
     materialTitle.textContent = entry.title;
     const materialMeta = document.createElement("p");
     materialMeta.className = "notebook-print-meta";
-    materialMeta.textContent = `${MODE_LABELS[entry.mode] || MODE_LABELS.ask} · ${formatNotebookDate(entry.createdAt)}${entry.reviewed ? " · Revisado" : ""}`;
+    materialMeta.textContent = `${MODE_LABELS[entry.mode] || MODE_LABELS.ask} · ${notebookLevel(entry)} · próxima revisão: ${formatReviewDate(entry.nextReviewAt)} · salvo em ${formatNotebookDate(entry.createdAt)}`;
     const answer = document.createElement("div");
     answer.className = "notebook-print-answer";
     answer.textContent = entry.answer;
