@@ -299,6 +299,8 @@ function renderMindMap(article, text, fallbackTitle) {
   const svg = svgElement("svg", {
     xmlns: "http://www.w3.org/2000/svg",
     viewBox: `0 0 ${width} ${height}`,
+    width,
+    height,
     role: "img",
     "aria-label": `Mapa mental sobre ${fallbackTitle}`,
   });
@@ -368,8 +370,13 @@ function renderMindMap(article, text, fallbackTitle) {
   zoomIn.setAttribute("aria-label", "Ampliar mapa");
   const download = document.createElement("button");
   download.type = "button";
-  download.textContent = "Baixar PNG";
-  actions.append(zoomOut, zoomIn, download);
+  download.textContent = "Preparando PNG…";
+  download.disabled = true;
+  const openImage = document.createElement("button");
+  openImage.type = "button";
+  openImage.textContent = "Abrir PNG";
+  openImage.disabled = true;
+  actions.append(zoomOut, zoomIn, download, openImage);
   toolbar.append(heading, actions);
 
   const viewport = document.createElement("div");
@@ -388,7 +395,8 @@ function renderMindMap(article, text, fallbackTitle) {
     zoom = Math.min(1.6, zoom + 0.15);
     applyZoom();
   });
-  download.addEventListener("click", () => {
+  let pngUrl = null;
+  const preparePng = () => {
     const serialized = new XMLSerializer().serializeToString(svg);
     const source = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
     const sourceUrl = URL.createObjectURL(source);
@@ -401,27 +409,46 @@ function renderMindMap(article, text, fallbackTitle) {
       const context = canvas.getContext("2d");
       if (!context) {
         URL.revokeObjectURL(sourceUrl);
+        download.textContent = "PNG indisponível";
         return;
       }
       context.scale(scale, scale);
       context.drawImage(image, 0, 0, width, height);
       URL.revokeObjectURL(sourceUrl);
       canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "mapa-mental.png";
-        link.click();
-        window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+        if (!blob) {
+          download.textContent = "PNG indisponível";
+          return;
+        }
+        pngUrl = URL.createObjectURL(blob);
+        download.textContent = "Baixar PNG";
+        download.disabled = false;
+        openImage.disabled = false;
       }, "image/png");
     };
-    image.onerror = () => URL.revokeObjectURL(sourceUrl);
+    image.onerror = () => {
+      URL.revokeObjectURL(sourceUrl);
+      download.textContent = "PNG indisponível";
+    };
     image.src = sourceUrl;
+  };
+  download.addEventListener("click", () => {
+    if (!pngUrl) return;
+    const link = document.createElement("a");
+    link.href = pngUrl;
+    link.download = "mapa-mental.png";
+    link.hidden = true;
+    document.body.append(link);
+    link.click();
+    link.remove();
+  });
+  openImage.addEventListener("click", () => {
+    if (pngUrl) window.open(pngUrl, "_blank", "noopener");
   });
   applyZoom();
   panel.append(toolbar, viewport);
   article.append(panel);
+  preparePng();
 }
 
 function setMode(mode) {
