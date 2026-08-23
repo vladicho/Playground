@@ -32,6 +32,19 @@
           <p class="hero-copy">
             Respostas em português ou espanhol, fundamentadas nos documentos indexados da sua biblioteca.
           </p>
+          <section class="study-tools" aria-labelledby="study-tools-title">
+            <div class="section-heading">
+              <p class="eyebrow" id="study-tools-title">Ferramentas de estudo</p>
+              <small>Escolha um modo e informe o assunto ou documento.</small>
+            </div>
+            <div class="mode-grid">
+              <button type="button" data-mode="summary"><span>Resumo</span><small>Síntese fundamentada</small></button>
+              <button type="button" data-mode="quiz"><span>Quiz</span><small>5 questões comentadas</small></button>
+              <button type="button" data-mode="flashcards"><span>Flashcards</span><small>10 cartões de revisão</small></button>
+              <button type="button" data-mode="mindmap"><span>Mapa mental</span><small>Estrutura em tópicos</small></button>
+              <button type="button" data-mode="podcast"><span>Podcast</span><small>Roteiro curto em diálogo</small></button>
+            </div>
+          </section>
           <div class="suggestions" aria-label="Perguntas sugeridas">
             <button type="button" data-prompt="Explique um conceito de aritmética encontrado nos documentos e dê um exemplo.">
               <span>01</span> Conceito de aritmética
@@ -47,13 +60,21 @@
       </main>
 
       <footer class="composer-wrap">
+        <div class="mode-bar" aria-label="Modo da pergunta">
+          <button class="mode-pill active" type="button" data-mode="ask">Perguntar</button>
+          <button class="mode-pill" type="button" data-mode="summary">Resumo</button>
+          <button class="mode-pill" type="button" data-mode="quiz">Quiz</button>
+          <button class="mode-pill" type="button" data-mode="flashcards">Flashcards</button>
+          <button class="mode-pill" type="button" data-mode="mindmap">Mapa mental</button>
+          <button class="mode-pill" type="button" data-mode="podcast">Podcast</button>
+        </div>
         <form id="chat-form" class="composer">
           <label class="sr-only" for="question">Pergunta</label>
           <textarea
             id="question"
             name="question"
             rows="1"
-            maxlength="4000"
+            maxlength="3000"
             placeholder="Pergunte sobre os documentos…"
             autocomplete="off"
             required
