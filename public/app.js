@@ -3,10 +3,44 @@ const form = document.querySelector("#chat-form");
 const input = document.querySelector("#question");
 const sendButton = document.querySelector("#send-button");
 const clearButton = document.querySelector("#clear-chat");
+const modeButtons = document.querySelectorAll("[data-mode]");
+
+const MODES = {
+  ask: {
+    placeholder: "Pergunte sobre os documentos…",
+    prompt: (topic) => topic,
+  },
+  summary: {
+    placeholder: "Assunto ou nome do documento para resumir…",
+    prompt: (topic) =>
+      `Crie um resumo didático sobre "${topic}" usando somente informações sustentadas pelos documentos recuperados. Organize em: visão geral, conceitos principais, fórmulas ou definições importantes e pontos para revisar. Diferencie claramente o conteúdo das fontes de qualquer explicação sua.`,
+  },
+  quiz: {
+    placeholder: "Assunto do quiz…",
+    prompt: (topic) =>
+      `Crie um quiz de estudo sobre "${topic}" com 5 questões objetivas baseadas nos documentos recuperados. Dê quatro alternativas por questão. Coloque o gabarito comentado somente depois de todas as perguntas e explique qual informação da fonte sustenta cada resposta.`,
+  },
+  flashcards: {
+    placeholder: "Assunto dos flashcards…",
+    prompt: (topic) =>
+      `Crie 10 flashcards sobre "${topic}" com base nos documentos recuperados. Use o formato numerado "Frente:" e "Verso:". Faça cartões curtos, sem repetir ideias, e não invente informações ausentes nas fontes.`,
+  },
+  mindmap: {
+    placeholder: "Assunto do mapa mental…",
+    prompt: (topic) =>
+      `Crie um mapa mental textual sobre "${topic}" usando os documentos recuperados. Comece pelo tema central e organize ramos e sub-ramos com indentação e conectores. Inclua conceitos, relações, fórmulas e exemplos somente quando sustentados pelas fontes.`,
+  },
+  podcast: {
+    placeholder: "Assunto do roteiro de podcast…",
+    prompt: (topic) =>
+      `Crie um roteiro curto de podcast educativo, de aproximadamente 3 minutos, sobre "${topic}". Use duas vozes chamadas Apresentador e Especialista, linguagem natural e explicações baseadas nos documentos recuperados. Termine com três pontos de revisão. Não invente fatos ausentes nas fontes.`,
+  },
+};
 
 const state = {
   messages: [],
   busy: false,
+  mode: "ask",
 };
 
 function resizeInput() {
@@ -48,33 +82,92 @@ function cleanSourceName(key) {
   return name.replace(/\.[^.]+$/, "");
 }
 
+function findPage(chunk) {
+  const metadata = chunk?.item?.metadata;
+  if (!metadata || typeof metadata !== "object") return null;
+  for (const key of ["page", "page_number", "pageNumber"]) {
+    const value = metadata[key];
+    if (typeof value === "number" || (typeof value === "string" && value.trim())) {
+      return String(value);
+    }
+  }
+  return null;
+}
+
+function cleanExcerpt(text) {
+  if (typeof text !== "string") return "";
+  const clean = text.replace(/\s+/g, " ").trim();
+  return clean.length > 360 ? `${clean.slice(0, 357)}…` : clean;
+}
+
 function renderSources(article, chunks) {
   const unique = new Map();
   for (const chunk of chunks) {
     const key = chunk?.item?.key;
-    if (typeof key !== "string" || unique.has(key)) continue;
-    unique.set(key, typeof chunk.score === "number" ? chunk.score : null);
+    if (typeof key !== "string") continue;
+    const score = typeof chunk.score === "number" ? chunk.score : null;
+    const existing = unique.get(key);
+    if (!existing || (score !== null && (existing.score === null || score > existing.score))) {
+      unique.set(key, {
+        score,
+        page: findPage(chunk),
+        excerpt: cleanExcerpt(chunk.text),
+      });
+    }
   }
   if (unique.size === 0) return;
 
-  const sources = document.createElement("div");
+  const sources = document.createElement("section");
   sources.className = "sources";
-  sources.setAttribute("aria-label", "Fontes");
+  sources.setAttribute("aria-label", "Fontes recuperadas");
 
-  for (const [key, score] of unique) {
-    const chip = document.createElement("span");
-    chip.className = "source-chip";
+  const heading = document.createElement("div");
+  heading.className = "sources-heading";
+  const title = document.createElement("strong");
+  title.textContent = `Fontes recuperadas (${unique.size})`;
+  const note = document.createElement("small");
+  note.textContent = "Similaridade indica recuperação, não garante que toda a resposta esteja na fonte.";
+  heading.append(title, note);
+  sources.append(heading);
+
+  for (const [key, details] of unique) {
+    const source = document.createElement("details");
+    source.className = "source-card";
+    const summary = document.createElement("summary");
     const name = document.createElement("b");
     name.textContent = cleanSourceName(key);
-    chip.append(name);
-    if (score !== null) {
-      const value = document.createElement("em");
-      value.textContent = score.toFixed(3);
-      chip.append(value);
+    summary.append(name);
+    if (details.page !== null) {
+      const page = document.createElement("span");
+      page.textContent = `p. ${details.page}`;
+      summary.append(page);
     }
-    sources.append(chip);
+    if (details.score !== null) {
+      const value = document.createElement("em");
+      value.textContent = `${(details.score * 100).toFixed(1).replace(".", ",")}%`;
+      value.title = `Score bruto: ${details.score.toFixed(3)}`;
+      summary.append(value);
+    }
+    source.append(summary);
+    if (details.excerpt) {
+      const excerpt = document.createElement("p");
+      excerpt.textContent = details.excerpt;
+      source.append(excerpt);
+    }
+    sources.append(source);
   }
   article.append(sources);
+}
+
+function setMode(mode) {
+  if (!(mode in MODES) || state.busy) return;
+  state.mode = mode;
+  input.placeholder = MODES[mode].placeholder;
+  modeButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.mode === mode);
+    button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
+  });
+  input.focus();
 }
 
 function consumeSseBlock(block, target, sources) {
@@ -105,12 +198,12 @@ function consumeSseBlock(block, target, sources) {
   return false;
 }
 
-async function ask(question) {
+async function ask(question, displayQuestion = question) {
   if (state.busy) return;
   state.busy = true;
   sendButton.disabled = true;
 
-  createMessage("user", question);
+  createMessage("user", displayQuestion);
   state.messages.push({ role: "user", content: question });
   const assistant = createMessage("assistant");
   assistant.content.classList.add("typing");
@@ -166,11 +259,12 @@ async function ask(question) {
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  const question = input.value.trim();
-  if (!question) return;
+  const topic = input.value.trim();
+  if (!topic) return;
+  const question = MODES[state.mode].prompt(topic);
   input.value = "";
   resizeInput();
-  void ask(question);
+  void ask(question, topic);
 });
 
 input.addEventListener("input", resizeInput);
@@ -191,6 +285,10 @@ document.querySelectorAll("[data-prompt]").forEach((button) => {
     const prompt = button.getAttribute("data-prompt");
     if (prompt) void ask(prompt);
   });
+});
+
+modeButtons.forEach((button) => {
+  button.addEventListener("click", () => setMode(button.dataset.mode));
 });
 
 resizeInput();
