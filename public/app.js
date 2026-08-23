@@ -1,3 +1,5 @@
+import { renderMathIn } from "./math.js";
+
 const conversation = document.querySelector("#conversation");
 const form = document.querySelector("#chat-form");
 const input = document.querySelector("#question");
@@ -537,6 +539,7 @@ async function ask(question, displayQuestion = question, mode = "ask") {
     if (!answer) throw new Error("A biblioteca não retornou uma resposta.");
 
     state.messages.push({ role: "assistant", content: answer });
+    renderMathIn(assistant.content);
     if (mode === "podcast") renderAudioControls(assistant.article, answer);
     if (mode === "mindmap") renderMindMap(assistant.article, answer, displayQuestion);
     renderSources(assistant.article, sources);
