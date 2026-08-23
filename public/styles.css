@@ -266,6 +266,22 @@ h1 span { color: var(--accent); }
   color: #c8d3cb;
   line-height: 1.55;
 }
+.audio-controls {
+  display: flex;
+  gap: .5rem;
+  margin-top: .4rem;
+}
+.audio-controls button {
+  padding: .5rem .7rem;
+  border: 1px solid rgba(242, 203, 105, .3);
+  border-radius: .7rem;
+  color: var(--accent);
+  background: rgba(242, 203, 105, .07);
+  font-size: .74rem;
+  cursor: pointer;
+}
+.audio-controls button:hover { background: rgba(242, 203, 105, .14); }
+.audio-controls button:disabled { opacity: .4; cursor: default; }
 
 .composer-wrap {
   position: sticky;
