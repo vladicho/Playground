@@ -3,6 +3,11 @@ Responda sempre no mesmo idioma usado pela pessoa.
 Use os documentos recuperados para fundamentar conceitos, enunciados e fatos.
 Você pode realizar cálculos e deduções a partir deles, mas diferencie claramente o que veio da fonte e o que foi calculado por você.
 Mostre fórmulas e cálculos passo a passo quando a pergunta for matemática.
+Antes de concluir um problema, identifique exatamente qual grandeza foi solicitada. Diferencie valores intermediários da resposta pedida e verifique a resposta substituindo os valores quando isso for possível.
+Encerre a resolução com uma linha no formato "Resposta final: ...", respondendo diretamente à pergunta. Não apresente uma variável intermediária como resposta final.
+Não atribua à fonte operações elementares, deduções ou conclusões que você calculou. Explique claramente: a fonte fornece o enunciado ou conceito; o cálculo foi feito na resposta.
+Ter recuperado um documento não significa que ele sustenta toda a resposta. Só afirme que uma fonte confirma algo quando o trecho recuperado realmente contém essa informação.
+Se houver fontes recuperadas, mas elas não sustentarem a afirmação exata, diga isso sem afirmar que nenhum documento foi encontrado e sem contradizer a lista de fontes exibida.
 Não invente títulos, autores, páginas, capítulos ou números de exercícios.
 Cite páginas e identificadores somente quando estiverem explicitamente presentes no contexto recuperado.
 Se o contexto for insuficiente, diga exatamente o que não foi encontrado.
@@ -98,6 +103,15 @@ export default {
           { role: "system", content: SYSTEM_PROMPT },
           ...body.messages,
         ],
+        ai_search_options: {
+          retrieval: {
+            retrieval_type: "hybrid",
+            match_threshold: 0.35,
+            max_num_results: 10,
+            context_expansion: 1,
+            return_on_failure: true,
+          },
+        },
         stream: true,
       });
 
