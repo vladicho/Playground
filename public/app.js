@@ -72,6 +72,11 @@ const MODES = {
     prompt: (topic) =>
       `Crie um roteiro curto de podcast educativo, de aproximadamente 3 minutos, sobre "${topic}". Use duas vozes chamadas Apresentador e Especialista, linguagem natural e explicações baseadas nos documentos recuperados. Termine com três pontos de revisão. Não invente fatos ausentes nas fontes.`,
   },
+  exam: {
+    placeholder: "Assunto ou documento do simulado…",
+    prompt: (topic) =>
+      `Crie um simulado sobre "${topic}" usando somente informações sustentadas pelos documentos recuperados. Produza exatamente 5 questões, cada uma com 4 alternativas plausíveis e apenas uma correta. Retorne somente um bloco no formato abaixo, com JSON válido e sem cercas de código ou comentários:\nSIMULADO_JSON\n{"title":"Título curto","questions":[{"question":"Enunciado","options":["Alternativa A","Alternativa B","Alternativa C","Alternativa D"],"correct":0,"explanation":"Correção comentada","source":"Nome do documento que sustenta a questão"}]}\nFIM_SIMULADO_JSON\nO campo correct deve ser um inteiro de 0 a 3. Use notação matemática simples ou escape corretamente barras invertidas do LaTeX dentro do JSON. Não revele respostas fora do JSON.`,
+  },
 };
 
 const MODE_LABELS = {
@@ -81,6 +86,7 @@ const MODE_LABELS = {
   flashcards: "Flashcards",
   mindmap: "Mapa mental",
   podcast: "Roteiro de podcast",
+  exam: "Simulado",
 };
 
 const state = {
@@ -500,8 +506,9 @@ function renderNotebookBody(body, entry) {
   const answer = document.createElement("div");
   answer.className = "notebook-answer";
   answer.textContent = entry.answer;
-  renderMathIn(answer);
   body.append(answer);
+  const examRendered = entry.mode === "exam" && renderExam(body, answer, entry.answer, entry.title);
+  if (!examRendered) renderMathIn(answer);
   if (entry.mode === "mindmap") renderMindMap(body, entry.answer, entry.title);
   appendNotebookSources(body, entry.sources);
 
@@ -1189,6 +1196,213 @@ function renderMindMap(article, text, fallbackTitle) {
   preparePng();
 }
 
+function parseExam(text) {
+  const match = text.match(/SIMULADO_JSON\s*([\s\S]*?)\s*FIM_SIMULADO_JSON/i);
+  if (!match) return null;
+  const source = match[1].trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  try {
+    const data = JSON.parse(source);
+    if (!data || !Array.isArray(data.questions) || data.questions.length !== 5) return null;
+    const questions = data.questions.map((question) => {
+      if (
+        !question ||
+        typeof question.question !== "string" ||
+        !Array.isArray(question.options) ||
+        question.options.length !== 4 ||
+        !question.options.every((option) => typeof option === "string") ||
+        !Number.isInteger(question.correct) ||
+        question.correct < 0 ||
+        question.correct > 3
+      ) {
+        throw new Error("Questão inválida");
+      }
+      return {
+        question: question.question,
+        options: question.options,
+        correct: question.correct,
+        explanation: typeof question.explanation === "string" ? question.explanation : "",
+        source: typeof question.source === "string" ? question.source : "",
+      };
+    });
+    return { title: typeof data.title === "string" ? data.title : "Simulado", questions };
+  } catch {
+    return null;
+  }
+}
+
+function setMathText(target, text) {
+  target.textContent = text;
+  renderMathIn(target);
+}
+
+function renderExam(article, content, text, fallbackTitle) {
+  const exam = parseExam(text);
+  if (!exam) return false;
+
+  content.textContent = "Simulado pronto. As respostas serão reveladas somente após a entrega.";
+  const panel = document.createElement("section");
+  panel.className = "exam-panel";
+  const header = document.createElement("header");
+  const heading = document.createElement("div");
+  const eyebrow = document.createElement("small");
+  eyebrow.textContent = "5 questões · 20 minutos";
+  const title = document.createElement("h3");
+  title.textContent = exam.title || fallbackTitle;
+  heading.append(eyebrow, title);
+  const timer = document.createElement("time");
+  timer.setAttribute("aria-label", "Tempo restante");
+  timer.textContent = "20:00";
+  header.append(heading, timer);
+
+  const progress = document.createElement("p");
+  progress.className = "exam-progress";
+  progress.textContent = "0 de 5 respondidas";
+  const form = document.createElement("form");
+  form.className = "exam-form";
+  const fieldsets = [];
+  const examId = newNotebookId();
+
+  exam.questions.forEach((question, questionIndex) => {
+    const fieldset = document.createElement("fieldset");
+    const legend = document.createElement("legend");
+    const number = document.createElement("b");
+    number.textContent = `${questionIndex + 1}.`;
+    const questionText = document.createElement("span");
+    setMathText(questionText, question.question);
+    legend.append(number, questionText);
+    fieldset.append(legend);
+
+    const options = document.createElement("div");
+    options.className = "exam-options";
+    question.options.forEach((option, optionIndex) => {
+      const label = document.createElement("label");
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = `exam-${examId}-${questionIndex}`;
+      radio.value = String(optionIndex);
+      const letter = document.createElement("b");
+      letter.textContent = `${String.fromCharCode(65 + optionIndex)})`;
+      const optionText = document.createElement("span");
+      setMathText(optionText, option);
+      label.append(radio, letter, optionText);
+      options.append(label);
+    });
+    const feedback = document.createElement("div");
+    feedback.className = "exam-feedback";
+    feedback.hidden = true;
+    fieldset.append(options, feedback);
+    fieldsets.push({ fieldset, feedback, question });
+    form.append(fieldset);
+  });
+
+  const footer = document.createElement("footer");
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.textContent = "Entregar simulado";
+  const result = document.createElement("strong");
+  result.className = "exam-result";
+  footer.append(result, submit);
+  form.append(footer);
+  panel.append(header, progress, form);
+  article.append(panel);
+
+  const updateProgress = () => {
+    const answered = fieldsets.filter(({ fieldset }) => fieldset.querySelector("input:checked")).length;
+    progress.textContent = `${answered} de ${fieldsets.length} respondidas`;
+  };
+  form.addEventListener("change", updateProgress);
+
+  let remaining = 20 * 60;
+  let submitted = false;
+  const updateTimer = () => {
+    const minutes = Math.floor(remaining / 60);
+    const seconds = remaining % 60;
+    timer.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    timer.classList.toggle("ending", remaining <= 60);
+  };
+
+  const grade = (expired = false) => {
+    if (submitted) return;
+    submitted = true;
+    window.clearInterval(interval);
+    let score = 0;
+    const errors = [];
+    fieldsets.forEach(({ fieldset, feedback, question }, questionIndex) => {
+      const selected = fieldset.querySelector("input:checked");
+      const selectedIndex = selected ? Number(selected.value) : -1;
+      if (selectedIndex === question.correct) score += 1;
+      else errors.push({ questionIndex, selectedIndex, question });
+      fieldset.querySelectorAll("input").forEach((radio) => { radio.disabled = true; });
+      fieldset.querySelectorAll(".exam-options label").forEach((label, optionIndex) => {
+        label.classList.toggle("correct", optionIndex === question.correct);
+        label.classList.toggle("incorrect", optionIndex === selectedIndex && selectedIndex !== question.correct);
+      });
+      const status = document.createElement("strong");
+      status.textContent = selectedIndex === question.correct ? "Correta" : "Incorreta";
+      const explanation = document.createElement("p");
+      setMathText(explanation, question.explanation || "Sem explicação adicional.");
+      feedback.append(status, explanation);
+      if (question.source) {
+        const source = document.createElement("small");
+        source.textContent = `Fonte indicada: ${question.source}`;
+        feedback.append(source);
+      }
+      feedback.hidden = false;
+    });
+    const percent = Math.round((score / fieldsets.length) * 100);
+    result.textContent = `${score}/${fieldsets.length} · ${percent}%`;
+    submit.disabled = true;
+    submit.textContent = expired ? "Tempo encerrado" : "Simulado entregue";
+    timer.textContent = expired ? "Encerrado" : timer.textContent;
+    progress.textContent = errors.length
+      ? `${errors.length} questão(ões) para revisar`
+      : "Parabéns: nenhuma questão errada";
+
+    const report = document.createElement("section");
+    report.className = "exam-report";
+    const reportTitle = document.createElement("h4");
+    reportTitle.textContent = "Relatório de erros";
+    report.append(reportTitle);
+    if (errors.length === 0) {
+      const perfect = document.createElement("p");
+      perfect.textContent = "Você acertou todas as questões.";
+      report.append(perfect);
+    } else {
+      const list = document.createElement("ol");
+      for (const error of errors) {
+        const item = document.createElement("li");
+        const correct = String.fromCharCode(65 + error.question.correct);
+        const selected = error.selectedIndex >= 0 ? String.fromCharCode(65 + error.selectedIndex) : "não respondida";
+        const summary = document.createElement("span");
+        summary.textContent = `Questão ${error.questionIndex + 1}: marcou ${selected}; correta ${correct}. `;
+        const explanation = document.createElement("span");
+        setMathText(explanation, error.question.explanation);
+        item.append(summary, explanation);
+        list.append(item);
+      }
+      report.append(list);
+    }
+    panel.append(report);
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    grade(false);
+  });
+  const interval = window.setInterval(() => {
+    if (!panel.isConnected) {
+      window.clearInterval(interval);
+      return;
+    }
+    remaining -= 1;
+    updateTimer();
+    if (remaining <= 0) grade(true);
+  }, 1_000);
+  updateTimer();
+  return true;
+}
+
 function renderExportControls(article, title, mode, material) {
   const printHeader = document.createElement("header");
   printHeader.className = "print-header";
@@ -1319,7 +1533,13 @@ async function ask(question, displayQuestion = question, mode = "ask") {
     if (!answer) throw new Error("A biblioteca não retornou uma resposta.");
 
     state.messages.push({ role: "assistant", content: answer });
-    renderMathIn(assistant.content);
+    const examRendered = mode === "exam" && renderExam(
+      assistant.article,
+      assistant.content,
+      answer,
+      displayQuestion,
+    );
+    if (!examRendered) renderMathIn(assistant.content);
     if (mode === "podcast") renderAudioControls(assistant.article, answer);
     if (mode === "mindmap") renderMindMap(assistant.article, answer, displayQuestion);
     renderSources(assistant.article, sources);
