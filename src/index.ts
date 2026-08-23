@@ -103,15 +103,6 @@ export default {
           { role: "system", content: SYSTEM_PROMPT },
           ...body.messages,
         ],
-        ai_search_options: {
-          retrieval: {
-            retrieval_type: "hybrid",
-            match_threshold: 0.35,
-            max_num_results: 10,
-            context_expansion: 1,
-            return_on_failure: true,
-          },
-        },
         stream: true,
       });
 
