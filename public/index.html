@@ -191,8 +191,10 @@
             <span class="sr-only">Filtrar por revisão</span>
             <select id="notebook-status">
               <option value="">Todos os estados</option>
-              <option value="pending">Para revisar</option>
-              <option value="reviewed">Revisados</option>
+              <option value="due">Revisão pendente</option>
+              <option value="new">Novos</option>
+              <option value="learning">Aprendendo</option>
+              <option value="mastered">Dominados</option>
             </select>
           </label>
         </div>
@@ -201,6 +203,26 @@
           <strong id="notebook-count">Nenhum material salvo</strong>
           <small id="notebook-progress">0 revisados</small>
         </div>
+        <section id="review-dashboard" class="review-dashboard" aria-label="Progresso das revisões">
+          <div class="review-stats">
+            <span><b id="review-due">0</b><small>Pendentes</small></span>
+            <span><b id="review-learning">0</b><small>Aprendendo</small></span>
+            <span><b id="review-mastered">0</b><small>Dominados</small></span>
+            <span><b id="review-streak">0</b><small>Dias seguidos</small></span>
+          </div>
+          <div class="review-progress">
+            <div><span>Domínio geral</span><strong id="review-percent">0%</strong></div>
+            <progress id="review-progress-bar" max="100" value="0">0%</progress>
+          </div>
+          <details class="book-progress">
+            <summary>Progresso por livro</summary>
+            <div id="book-progress-list"></div>
+          </details>
+          <details class="topic-progress">
+            <summary>Progresso por assunto</summary>
+            <div id="topic-progress-list"></div>
+          </details>
+        </section>
         <div id="notebook-results" class="notebook-results" aria-live="polite"></div>
         <footer class="notebook-footer">
           <small>Use “Imprimir caderno” e escolha “Salvar como PDF”.</small>
