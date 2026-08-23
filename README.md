@@ -12,6 +12,7 @@ Cloudflare AI Search.
   com leitura em voz alta pelo dispositivo.
 - Mapa mental gráfico com zoom e exportação em PNG.
 - Fórmulas em LaTeX renderizadas localmente com MathML e botão para copiar.
+- Exportação de respostas e materiais pelo diálogo Imprimir / Salvar PDF.
 - Fontes recuperadas com similaridade e trechos expansíveis.
 - Nenhum token ou credencial é enviado ao navegador.
 - O domínio deve ser protegido pelo Cloudflare Access antes de ser liberado.
