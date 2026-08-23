@@ -24,6 +24,8 @@ Cloudflare AI Search.
   sequência diária e progresso por livro e assunto.
 - Modo Simulado com cinco questões fundamentadas, cronômetro de 20 minutos,
   correção local, nota e relatório de erros sem chamadas adicionais à IA.
+- Plano semanal local com geração de metas a partir do caderno, calendário,
+  cronômetro por sessão e acompanhamento de minutos e tarefas concluídas.
 - Nenhum token ou credencial é enviado ao navegador.
 - O domínio deve ser protegido pelo Cloudflare Access antes de ser liberado.
 
