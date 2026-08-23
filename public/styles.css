@@ -282,6 +282,46 @@ h1 span { color: var(--accent); }
 }
 .audio-controls button:hover { background: rgba(242, 203, 105, .14); }
 .audio-controls button:disabled { opacity: .4; cursor: default; }
+.mindmap-panel {
+  margin-top: .55rem;
+  border: 1px solid rgba(242, 203, 105, .24);
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #0f2119;
+}
+.mindmap-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .65rem .75rem;
+  border-bottom: 1px solid var(--line);
+  background: #152d23;
+}
+.mindmap-toolbar strong { color: var(--accent); font-size: .78rem; }
+.mindmap-toolbar div { display: flex; gap: .35rem; }
+.mindmap-toolbar button {
+  min-width: 2rem;
+  padding: .4rem .55rem;
+  border: 1px solid var(--line);
+  border-radius: .55rem;
+  color: var(--text);
+  background: #1b392c;
+  font-size: .7rem;
+  cursor: pointer;
+}
+.mindmap-toolbar button:hover { border-color: rgba(242, 203, 105, .5); }
+.mindmap-viewport {
+  max-height: min(62vh, 680px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #456d59 #10251c;
+}
+.mindmap-svg {
+  display: block;
+  max-width: none;
+  transition: width .18s ease, height .18s ease;
+}
 
 .composer-wrap {
   position: sticky;
