@@ -39,6 +39,15 @@ const MODES = {
   },
 };
 
+const MODE_LABELS = {
+  ask: "Resposta da biblioteca",
+  summary: "Resumo",
+  quiz: "Quiz",
+  flashcards: "Flashcards",
+  mindmap: "Mapa mental",
+  podcast: "Roteiro de podcast",
+};
+
 const state = {
   messages: [],
   busy: false,
@@ -453,6 +462,46 @@ function renderMindMap(article, text, fallbackTitle) {
   preparePng();
 }
 
+function renderExportControls(article, title, mode) {
+  const printHeader = document.createElement("header");
+  printHeader.className = "print-header";
+  const brand = document.createElement("p");
+  brand.textContent = "Biblioteca Matemática";
+  const heading = document.createElement("h1");
+  heading.textContent = title;
+  const metadata = document.createElement("p");
+  const date = new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(new Date());
+  metadata.textContent = `${MODE_LABELS[mode] || MODE_LABELS.ask} · ${date}`;
+  printHeader.append(brand, heading, metadata);
+  article.prepend(printHeader);
+
+  const controls = document.createElement("div");
+  controls.className = "export-controls";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "Imprimir / Salvar PDF";
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".print-target").forEach((target) => target.classList.remove("print-target"));
+    article.classList.add("print-target");
+    document.body.classList.add("printing");
+    const previousTitle = document.title;
+    document.title = `${MODE_LABELS[mode] || "Biblioteca"} - ${title}`.slice(0, 120);
+    const cleanup = () => {
+      article.classList.remove("print-target");
+      document.body.classList.remove("printing");
+      document.title = previousTitle;
+    };
+    window.addEventListener("afterprint", cleanup, { once: true });
+    window.addEventListener("focus", cleanup, { once: true });
+    window.print();
+  });
+  controls.append(button);
+  article.append(controls);
+}
+
 function setMode(mode) {
   if (!(mode in MODES) || state.busy) return;
   state.mode = mode;
@@ -543,6 +592,7 @@ async function ask(question, displayQuestion = question, mode = "ask") {
     if (mode === "podcast") renderAudioControls(assistant.article, answer);
     if (mode === "mindmap") renderMindMap(assistant.article, answer, displayQuestion);
     renderSources(assistant.article, sources);
+    renderExportControls(assistant.article, displayQuestion, mode);
   } catch (error) {
     assistant.article.classList.add("error");
     assistant.content.textContent = error instanceof Error ? error.message : "Ocorreu um erro inesperado.";
