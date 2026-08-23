@@ -127,6 +127,32 @@
           <strong id="catalog-count">Carregando catálogo…</strong>
           <small><i></i> Indexado = disponível para perguntas no RAG</small>
         </div>
+        <section class="index-queue" aria-labelledby="queue-title">
+          <div class="index-queue-heading">
+            <div>
+              <strong id="queue-title">Fila de indexação <span id="queue-count">0/10</span></strong>
+              <small>A fila fica salva neste dispositivo e não consome créditos.</small>
+            </div>
+            <button id="queue-toggle" type="button" aria-expanded="false">Abrir fila</button>
+          </div>
+          <div id="queue-body" class="index-queue-body" hidden>
+            <ol id="queue-list"></ol>
+            <label class="queue-remote">
+              <span>Destino do rclone</span>
+              <input id="queue-remote" type="text" placeholder="remote:nome-do-bucket" autocomplete="off" />
+              <small>Exemplo: nome-do-remote:nome-do-bucket. Este valor fica somente no navegador.</small>
+            </label>
+            <div class="queue-actions">
+              <button id="queue-copy" type="button" disabled>Copiar comandos do Termux</button>
+              <button id="queue-clear" type="button" disabled>Limpar fila</button>
+            </div>
+            <p id="queue-feedback" class="queue-feedback" aria-live="polite"></p>
+            <p class="queue-note">
+              Depois de executar os comandos, confirme no AI Search que o filtro inclui
+              <code>/rag-teste/**</code> e inicie a reindexação. O selo “Indexado” só deve ser atualizado após a confirmação.
+            </p>
+          </div>
+        </section>
         <div id="catalog-results" class="catalog-results" aria-live="polite"></div>
         <button id="catalog-more" class="catalog-more" type="button" hidden>Mostrar mais</button>
       </section>
