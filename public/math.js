@@ -46,6 +46,36 @@ function matrixFromLatex(latex) {
   return row;
 }
 
+function alignedFromLatex(latex) {
+  const match = latex
+    .trim()
+    .match(/^\\begin\{(aligned|align\*?|gathered)\}([\s\S]*?)\\end\{\1\}$/);
+  if (!match) return null;
+
+  const table = element("mtable");
+  table.setAttribute("rowspacing", ".45em");
+  table.setAttribute("columnspacing", ".35em");
+  table.setAttribute("columnalign", match[1] === "gathered" ? "center" : "right left");
+
+  const rows = match[2]
+    .split(/\\\\/)
+    .map((row) => row.trim())
+    .filter(Boolean);
+
+  for (const rowSource of rows) {
+    const row = element("mtr");
+    const cells = match[1] === "gathered" ? [rowSource] : rowSource.split("&");
+    for (const cellSource of cells) {
+      const cell = element("mtd");
+      cell.append(new LatexParser(cellSource.trim()).parse());
+      row.append(cell);
+    }
+    table.append(row);
+  }
+
+  return table;
+}
+
 class LatexParser {
   constructor(source) {
     this.source = source;
@@ -196,7 +226,8 @@ function createMath(latex, display) {
   math.setAttribute("display", display ? "block" : "inline");
   math.setAttribute("aria-label", latex);
   const matrix = matrixFromLatex(latex);
-  math.append(matrix || new LatexParser(latex).parse());
+  const aligned = alignedFromLatex(latex);
+  math.append(matrix || aligned || new LatexParser(latex).parse());
   return math;
 }
 
