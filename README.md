@@ -50,3 +50,31 @@ Conecte este repositório ao Workers Builds e use:
 
 Configure o domínio `playground.lugarerrado.com` no Worker e proteja-o com
 Cloudflare Access.
+
+## D1 para usuários e cotas
+
+O Worker aceita opcionalmente um binding D1 chamado `DB`. Sem o binding, o chat
+continua funcionando sem persistência, como antes. Com o binding e a primeira
+migração aplicada, ele registra usuários pseudonimizados e agrega solicitações,
+sucessos e erros por dia.
+
+```bash
+npx wrangler d1 create playground-db
+npx wrangler d1 migrations apply playground-db --remote
+```
+
+Depois da criação, adicione o `database_id` retornado ao `wrangler.jsonc`:
+
+```jsonc
+"d1_databases": [
+  {
+    "binding": "DB",
+    "database_name": "playground-db",
+    "database_id": "<DATABASE_ID>",
+    "migrations_dir": "./migrations"
+  }
+]
+```
+
+As variáveis opcionais `DAILY_USER_LIMIT` e `DAILY_GLOBAL_LIMIT` ativam os
+limites diários. Se forem omitidas, o D1 apenas mede o uso.
