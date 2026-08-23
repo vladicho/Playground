@@ -15,6 +15,14 @@
       "instance_name": "biblioteca-matematica"
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "playground-db",
+      "database_id": "bc9d29ef-63ad-4603-b08b-6013f881cc10",
+      "migrations_dir": "./migrations"
+    }
+  ],
   "observability": {
     "enabled": true,
     "logs": {
