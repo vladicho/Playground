@@ -8,7 +8,8 @@ Cloudflare AI Search.
 - Cloudflare Worker com binding direto ao AI Search.
 - Static Assets para a interface web.
 - Respostas transmitidas por Server-Sent Events.
-- Modos de estudo: resumo, quiz, flashcards, mapa mental e roteiro de podcast.
+- Modos de estudo: resumo, quiz, flashcards, mapa mental e roteiro de podcast
+  com leitura em voz alta pelo dispositivo.
 - Fontes recuperadas com similaridade e trechos expansíveis.
 - Nenhum token ou credencial é enviado ao navegador.
 - O domínio deve ser protegido pelo Cloudflare Access antes de ser liberado.
