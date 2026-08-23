@@ -41,6 +41,30 @@ const reviewPercent = document.querySelector("#review-percent");
 const reviewProgressBar = document.querySelector("#review-progress-bar");
 const bookProgressList = document.querySelector("#book-progress-list");
 const topicProgressList = document.querySelector("#topic-progress-list");
+const planDialog = document.querySelector("#plan-dialog");
+const planOpen = document.querySelector("#plan-open");
+const planClose = document.querySelector("#plan-close");
+const planPlanned = document.querySelector("#plan-planned");
+const planStudied = document.querySelector("#plan-studied");
+const planCompleted = document.querySelector("#plan-completed");
+const planPercent = document.querySelector("#plan-percent");
+const planProgress = document.querySelector("#plan-progress");
+const planDefaultMinutes = document.querySelector("#plan-default-minutes");
+const planGenerate = document.querySelector("#plan-generate");
+const planAddForm = document.querySelector("#plan-add-form");
+const planTaskTitle = document.querySelector("#plan-task-title");
+const planTaskDate = document.querySelector("#plan-task-date");
+const planTaskMinutes = document.querySelector("#plan-task-minutes");
+const studyTimer = document.querySelector("#study-timer");
+const studyTimerTitle = document.querySelector("#study-timer-title");
+const studyTimerTime = document.querySelector("#study-timer-time");
+const studyTimerToggle = document.querySelector("#study-timer-toggle");
+const studyTimerFinish = document.querySelector("#study-timer-finish");
+const planPrevWeek = document.querySelector("#plan-prev-week");
+const planNextWeek = document.querySelector("#plan-next-week");
+const planCurrentWeek = document.querySelector("#plan-current-week");
+const planWeekLabel = document.querySelector("#plan-week-label");
+const planCalendar = document.querySelector("#plan-calendar");
 
 const MODES = {
   ask: {
@@ -104,6 +128,69 @@ const REMOTE_STORAGE_KEY = "playground-rclone-remote-v1";
 const NOTEBOOK_STORAGE_KEY = "playground-study-notebook-v1";
 const NOTEBOOK_LIMIT = 150;
 const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
+const PLAN_STORAGE_KEY = "playground-study-plan-v1";
+
+function loadStudyPlan() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(PLAN_STORAGE_KEY) || "null");
+    if (!saved || typeof saved !== "object") throw new Error();
+    return {
+      settings: {
+        days: Array.isArray(saved.settings?.days)
+          ? saved.settings.days.filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
+          : [1, 2, 3, 4, 5, 6],
+        minutes: Number.isInteger(saved.settings?.minutes)
+          ? Math.max(5, Math.min(saved.settings.minutes, 240))
+          : 45,
+      },
+      tasks: Array.isArray(saved.tasks)
+        ? saved.tasks.filter(
+            (task) =>
+              task &&
+              typeof task.id === "string" &&
+              typeof task.title === "string" &&
+              /^\d{4}-\d{2}-\d{2}$/.test(task.date),
+          ).slice(-500)
+        : [],
+      sessions: Array.isArray(saved.sessions)
+        ? saved.sessions.filter(
+            (session) =>
+              session &&
+              typeof session.id === "string" &&
+              /^\d{4}-\d{2}-\d{2}$/.test(session.date) &&
+              Number.isFinite(session.seconds),
+          ).slice(-1_000)
+        : [],
+      activeTimer:
+        saved.activeTimer &&
+        typeof saved.activeTimer.taskId === "string" &&
+        Number.isFinite(saved.activeTimer.totalSeconds) &&
+        Number.isFinite(saved.activeTimer.remainingSeconds)
+          ? saved.activeTimer
+          : null,
+    };
+  } catch {
+    return {
+      settings: { days: [1, 2, 3, 4, 5, 6], minutes: 45 },
+      tasks: [],
+      sessions: [],
+      activeTimer: null,
+    };
+  }
+}
+
+let studyPlan = loadStudyPlan();
+let planWeekOffset = 0;
+let studyTimerInterval = null;
+
+function persistStudyPlan() {
+  try {
+    window.localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(studyPlan));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function addDays(value, days) {
   const date = new Date(value);
@@ -671,6 +758,267 @@ function printNotebook() {
   window.addEventListener("afterprint", cleanup, { once: true });
   window.addEventListener("focus", cleanup, { once: true });
   window.print();
+}
+
+function planDateKey(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function startOfPlanWeek(offset = planWeekOffset) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  const distanceFromMonday = (date.getDay() + 6) % 7;
+  date.setDate(date.getDate() - distanceFromMonday + offset * 7);
+  return date;
+}
+
+function currentTimerRemaining() {
+  const timer = studyPlan.activeTimer;
+  if (!timer) return 0;
+  if (!timer.running) return Math.max(0, Math.round(timer.remainingSeconds));
+  const updatedAt = new Date(timer.updatedAt).getTime();
+  const elapsed = Number.isNaN(updatedAt) ? 0 : Math.floor((Date.now() - updatedAt) / 1_000);
+  return Math.max(0, Math.round(timer.remainingSeconds) - elapsed);
+}
+
+function stopStudyTimerInterval() {
+  if (studyTimerInterval !== null) window.clearInterval(studyTimerInterval);
+  studyTimerInterval = null;
+}
+
+function finishStudyTimer(expired = false) {
+  const timer = studyPlan.activeTimer;
+  if (!timer) return;
+  const remaining = expired ? 0 : currentTimerRemaining();
+  const elapsed = Math.max(0, Math.round(timer.totalSeconds - remaining));
+  const task = studyPlan.tasks.find((candidate) => candidate.id === timer.taskId);
+  if (elapsed > 0) {
+    studyPlan.sessions.push({
+      id: newNotebookId(),
+      taskId: timer.taskId,
+      date: planDateKey(),
+      seconds: elapsed,
+      completedAt: new Date().toISOString(),
+    });
+    studyPlan.sessions = studyPlan.sessions.slice(-1_000);
+  }
+  if (task) task.done = true;
+  studyPlan.activeTimer = null;
+  stopStudyTimerInterval();
+  persistStudyPlan();
+  renderStudyPlan();
+}
+
+function renderStudyTimer() {
+  const timer = studyPlan.activeTimer;
+  if (!timer) {
+    studyTimer.hidden = true;
+    stopStudyTimerInterval();
+    return;
+  }
+  const task = studyPlan.tasks.find((candidate) => candidate.id === timer.taskId);
+  if (!task) {
+    studyPlan.activeTimer = null;
+    persistStudyPlan();
+    studyTimer.hidden = true;
+    stopStudyTimerInterval();
+    return;
+  }
+  const remaining = currentTimerRemaining();
+  const minutes = Math.floor(remaining / 60);
+  const seconds = remaining % 60;
+  studyTimer.hidden = false;
+  studyTimerTitle.textContent = task.title;
+  studyTimerTime.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  studyTimerTime.classList.toggle("ending", remaining <= 60);
+  studyTimerToggle.textContent = timer.running ? "Pausar" : "Continuar";
+  if (remaining <= 0) window.setTimeout(() => finishStudyTimer(true), 0);
+}
+
+function ensureStudyTimerInterval() {
+  stopStudyTimerInterval();
+  if (!studyPlan.activeTimer?.running) return;
+  studyTimerInterval = window.setInterval(renderStudyTimer, 1_000);
+}
+
+function startStudyTask(task) {
+  if (studyPlan.activeTimer && studyPlan.activeTimer.taskId !== task.id) {
+    if (!window.confirm("Substituir a sessão que já está em andamento?")) return;
+  }
+  const totalSeconds = Math.max(5, Math.min(task.minutes, 240)) * 60;
+  studyPlan.activeTimer = {
+    taskId: task.id,
+    totalSeconds,
+    remainingSeconds: totalSeconds,
+    running: true,
+    updatedAt: new Date().toISOString(),
+  };
+  persistStudyPlan();
+  ensureStudyTimerInterval();
+  renderStudyPlan();
+}
+
+function toggleStudyTimer() {
+  const timer = studyPlan.activeTimer;
+  if (!timer) return;
+  if (timer.running) {
+    timer.remainingSeconds = currentTimerRemaining();
+    timer.running = false;
+  } else {
+    timer.running = true;
+  }
+  timer.updatedAt = new Date().toISOString();
+  persistStudyPlan();
+  ensureStudyTimerInterval();
+  renderStudyTimer();
+}
+
+function generatedPlanTopics() {
+  const ordered = [
+    ...notebookEntries.filter((entry) => isReviewDue(entry)),
+    ...notebookEntries,
+  ];
+  const seen = new Set();
+  const topics = [];
+  for (const entry of ordered) {
+    const key = normalizeSearch(entry.title);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    topics.push(entry.title);
+  }
+  return topics.length ? topics : ["Estudo livre de matemática"];
+}
+
+function generateStudyWeek() {
+  const selectedDays = [...document.querySelectorAll('input[name="study-day"]:checked')]
+    .map((input) => Number(input.value));
+  if (selectedDays.length === 0) {
+    window.alert("Selecione pelo menos um dia de estudo.");
+    return;
+  }
+  const minutes = Math.max(5, Math.min(Number(planDefaultMinutes.value) || 45, 240));
+  studyPlan.settings = { days: selectedDays, minutes };
+  const topics = generatedPlanTopics();
+  const start = startOfPlanWeek();
+  let topicIndex = 0;
+  for (let offset = 0; offset < 7; offset += 1) {
+    const date = new Date(start);
+    date.setDate(start.getDate() + offset);
+    if (!selectedDays.includes(date.getDay())) continue;
+    const dateKey = planDateKey(date);
+    if (studyPlan.tasks.some((task) => task.date === dateKey && task.generated)) continue;
+    const topic = topics[topicIndex % topics.length];
+    const due = notebookEntries.some(
+      (entry) => normalizeSearch(entry.title) === normalizeSearch(topic) && isReviewDue(entry),
+    );
+    studyPlan.tasks.push({
+      id: newNotebookId(),
+      title: `${due ? "Revisar" : "Estudar"}: ${topic}`,
+      date: dateKey,
+      minutes,
+      done: false,
+      generated: true,
+    });
+    topicIndex += 1;
+  }
+  persistStudyPlan();
+  renderStudyPlan();
+}
+
+function renderStudyPlan() {
+  const start = startOfPlanWeek();
+  const dates = Array.from({ length: 7 }, (_, offset) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + offset);
+    return date;
+  });
+  const startKey = planDateKey(dates[0]);
+  const endKey = planDateKey(dates[6]);
+  const weekTasks = studyPlan.tasks.filter((task) => task.date >= startKey && task.date <= endKey);
+  const weekSessions = studyPlan.sessions.filter(
+    (session) => session.date >= startKey && session.date <= endKey,
+  );
+  const planned = weekTasks.reduce((sum, task) => sum + (Number(task.minutes) || 0), 0);
+  const studiedSeconds = weekSessions.reduce((sum, session) => sum + session.seconds, 0);
+  const studied = Math.round(studiedSeconds / 60);
+  const completed = weekTasks.filter((task) => task.done).length;
+  const percent = planned ? Math.min(100, Math.round((studied / planned) * 100)) : 0;
+  planPlanned.textContent = String(planned);
+  planStudied.textContent = String(studied);
+  planCompleted.textContent = `${completed}/${weekTasks.length}`;
+  planPercent.textContent = `${percent}%`;
+  planProgress.value = percent;
+  planProgress.textContent = `${percent}%`;
+  planWeekLabel.textContent = `${new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(dates[0])} – ${new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).format(dates[6])}`;
+
+  const today = planDateKey();
+  const todayPending = studyPlan.tasks.filter((task) => task.date === today && !task.done).length;
+  planOpen.textContent = todayPending ? `Plano (${todayPending})` : "Plano";
+  planCalendar.replaceChildren();
+
+  for (const date of dates) {
+    const dateKey = planDateKey(date);
+    const day = document.createElement("article");
+    day.className = "plan-day";
+    day.classList.toggle("today", dateKey === today);
+    const heading = document.createElement("header");
+    const weekday = document.createElement("strong");
+    weekday.textContent = new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date).replace(".", "");
+    const dayNumber = document.createElement("span");
+    dayNumber.textContent = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(date);
+    heading.append(weekday, dayNumber);
+    day.append(heading);
+
+    const tasks = weekTasks.filter((task) => task.date === dateKey);
+    if (tasks.length === 0) {
+      const empty = document.createElement("p");
+      empty.textContent = "Sem metas";
+      day.append(empty);
+    }
+    for (const task of tasks) {
+      const taskCard = document.createElement("section");
+      taskCard.className = "plan-task";
+      taskCard.classList.toggle("done", Boolean(task.done));
+      const title = document.createElement("b");
+      title.textContent = task.title;
+      const duration = document.createElement("small");
+      duration.textContent = `${task.minutes} min`;
+      const actions = document.createElement("div");
+      const startButton = document.createElement("button");
+      startButton.type = "button";
+      startButton.textContent = studyPlan.activeTimer?.taskId === task.id ? "Em andamento" : "Iniciar";
+      startButton.disabled = studyPlan.activeTimer?.taskId === task.id;
+      startButton.addEventListener("click", () => startStudyTask(task));
+      const doneButton = document.createElement("button");
+      doneButton.type = "button";
+      doneButton.textContent = task.done ? "Concluída ✓" : "Concluir";
+      doneButton.addEventListener("click", () => {
+        task.done = !task.done;
+        persistStudyPlan();
+        renderStudyPlan();
+      });
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.textContent = "×";
+      removeButton.setAttribute("aria-label", `Excluir meta ${task.title}`);
+      removeButton.addEventListener("click", () => {
+        if (!window.confirm(`Excluir a meta "${task.title}"?`)) return;
+        studyPlan.tasks = studyPlan.tasks.filter((candidate) => candidate.id !== task.id);
+        if (studyPlan.activeTimer?.taskId === task.id) studyPlan.activeTimer = null;
+        persistStudyPlan();
+        renderStudyPlan();
+      });
+      actions.append(startButton, doneButton, removeButton);
+      taskCard.append(title, duration, actions);
+      day.append(taskCard);
+    }
+    planCalendar.append(day);
+  }
+  renderStudyTimer();
 }
 
 function normalizeSearch(value) {
@@ -1673,6 +2021,66 @@ for (const control of [notebookQuery, notebookMode, notebookStatus]) {
 }
 notebookPrint.addEventListener("click", printNotebook);
 
+planOpen.addEventListener("click", () => {
+  document.querySelectorAll('input[name="study-day"]').forEach((input) => {
+    input.checked = studyPlan.settings.days.includes(Number(input.value));
+  });
+  planDefaultMinutes.value = String(studyPlan.settings.minutes);
+  planTaskMinutes.value = String(studyPlan.settings.minutes);
+  if (!planTaskDate.value) planTaskDate.value = planDateKey();
+  renderStudyPlan();
+  planDialog.showModal();
+  window.requestAnimationFrame(() => planTaskTitle.focus());
+});
+planClose.addEventListener("click", () => planDialog.close());
+planDialog.addEventListener("click", (event) => {
+  if (event.target === planDialog) planDialog.close();
+});
+planGenerate.addEventListener("click", generateStudyWeek);
+planAddForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const title = planTaskTitle.value.trim();
+  const date = planTaskDate.value;
+  const minutes = Math.max(5, Math.min(Number(planTaskMinutes.value) || 45, 240));
+  if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+  studyPlan.tasks.push({
+    id: newNotebookId(),
+    title,
+    date,
+    minutes,
+    done: false,
+    generated: false,
+  });
+  studyPlan.tasks = studyPlan.tasks.slice(-500);
+  persistStudyPlan();
+  planTaskTitle.value = "";
+  planTaskMinutes.value = String(studyPlan.settings.minutes);
+  renderStudyPlan();
+  planTaskTitle.focus();
+});
+studyTimerToggle.addEventListener("click", toggleStudyTimer);
+studyTimerFinish.addEventListener("click", () => finishStudyTimer(false));
+planPrevWeek.addEventListener("click", () => {
+  planWeekOffset -= 1;
+  renderStudyPlan();
+});
+planNextWeek.addEventListener("click", () => {
+  planWeekOffset += 1;
+  renderStudyPlan();
+});
+planCurrentWeek.addEventListener("click", () => {
+  planWeekOffset = 0;
+  renderStudyPlan();
+});
+
 renderQueue();
 renderNotebook();
+document.querySelectorAll('input[name="study-day"]').forEach((input) => {
+  input.checked = studyPlan.settings.days.includes(Number(input.value));
+});
+planDefaultMinutes.value = String(studyPlan.settings.minutes);
+planTaskMinutes.value = String(studyPlan.settings.minutes);
+planTaskDate.value = planDateKey();
+ensureStudyTimerInterval();
+renderStudyPlan();
 resizeInput();
