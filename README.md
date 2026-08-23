@@ -11,6 +11,7 @@ Cloudflare AI Search.
 - Modos de estudo: resumo, quiz, flashcards, mapa mental e roteiro de podcast
   com leitura em voz alta pelo dispositivo.
 - Mapa mental gráfico com zoom e exportação em PNG.
+- Fórmulas em LaTeX renderizadas localmente com MathML e botão para copiar.
 - Fontes recuperadas com similaridade e trechos expansíveis.
 - Nenhum token ou credencial é enviado ao navegador.
 - O domínio deve ser protegido pelo Cloudflare Access antes de ser liberado.
