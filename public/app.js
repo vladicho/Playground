@@ -6,6 +6,15 @@ const input = document.querySelector("#question");
 const sendButton = document.querySelector("#send-button");
 const clearButton = document.querySelector("#clear-chat");
 const modeButtons = document.querySelectorAll("[data-mode]");
+const catalogDialog = document.querySelector("#catalog-dialog");
+const catalogOpen = document.querySelector("#catalog-open");
+const catalogClose = document.querySelector("#catalog-close");
+const catalogQuery = document.querySelector("#catalog-query");
+const catalogCategory = document.querySelector("#catalog-category");
+const catalogIndexed = document.querySelector("#catalog-indexed");
+const catalogCount = document.querySelector("#catalog-count");
+const catalogResults = document.querySelector("#catalog-results");
+const catalogMore = document.querySelector("#catalog-more");
 
 const MODES = {
   ask: {
@@ -55,6 +64,104 @@ const state = {
 };
 
 let activeSpeech = null;
+let catalogBooks = null;
+let catalogVisible = 36;
+
+function normalizeSearch(value) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function filteredCatalog() {
+  if (!catalogBooks) return [];
+  const query = normalizeSearch(catalogQuery.value);
+  const category = catalogCategory.value;
+  return catalogBooks.filter((book) => {
+    if (category && book.category !== category) return false;
+    if (catalogIndexed.checked && !book.indexed) return false;
+    return !query || normalizeSearch(`${book.title} ${book.category}`).includes(query);
+  });
+}
+
+function selectCatalogBook(book) {
+  if (!book.indexed) return;
+  catalogDialog.close();
+  setMode("ask");
+  input.value = `Usando o documento "${book.filename}", explique os conceitos principais e sugira uma sequência de estudo.`;
+  resizeInput();
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+}
+
+function renderCatalog() {
+  if (!catalogBooks) return;
+  const matches = filteredCatalog();
+  const visible = matches.slice(0, catalogVisible);
+  catalogResults.replaceChildren();
+  catalogCount.textContent = `${matches.length} ${matches.length === 1 ? "título encontrado" : "títulos encontrados"}`;
+
+  if (visible.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "catalog-empty";
+    empty.textContent = "Nenhum título corresponde a esses filtros.";
+    catalogResults.append(empty);
+  }
+
+  for (const book of visible) {
+    const card = document.createElement("article");
+    card.className = "catalog-card";
+
+    const meta = document.createElement("div");
+    meta.className = "catalog-card-meta";
+    const category = document.createElement("span");
+    category.textContent = book.category;
+    meta.append(category);
+    if (book.indexed) {
+      const indexed = document.createElement("strong");
+      indexed.textContent = "Indexado";
+      meta.append(indexed);
+    }
+
+    const title = document.createElement("h3");
+    title.textContent = book.title;
+    title.title = book.filename;
+
+    const action = document.createElement("button");
+    action.type = "button";
+    action.disabled = !book.indexed;
+    action.textContent = book.indexed ? "Perguntar sobre este livro" : "Ainda não indexado";
+    if (book.indexed) action.addEventListener("click", () => selectCatalogBook(book));
+
+    card.append(meta, title, action);
+    catalogResults.append(card);
+  }
+
+  catalogMore.hidden = visible.length >= matches.length;
+}
+
+async function loadCatalog() {
+  if (catalogBooks) {
+    renderCatalog();
+    return;
+  }
+  catalogCount.textContent = "Carregando catálogo…";
+  try {
+    const response = await fetch("/catalog.json");
+    if (!response.ok) throw new Error();
+    const data = await response.json();
+    if (!Array.isArray(data.books)) throw new Error();
+    catalogBooks = data.books;
+    renderCatalog();
+  } catch {
+    catalogCount.textContent = "Não foi possível carregar o catálogo.";
+    catalogResults.replaceChildren();
+    catalogMore.hidden = true;
+  }
+}
 
 function resizeInput() {
   input.style.height = "auto";
@@ -637,6 +744,28 @@ document.querySelectorAll("[data-prompt]").forEach((button) => {
 
 modeButtons.forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
+});
+
+catalogOpen.addEventListener("click", () => {
+  catalogVisible = 36;
+  catalogDialog.showModal();
+  void loadCatalog();
+  window.requestAnimationFrame(() => catalogQuery.focus());
+});
+
+catalogClose.addEventListener("click", () => catalogDialog.close());
+catalogDialog.addEventListener("click", (event) => {
+  if (event.target === catalogDialog) catalogDialog.close();
+});
+for (const control of [catalogQuery, catalogCategory, catalogIndexed]) {
+  control.addEventListener("input", () => {
+    catalogVisible = 36;
+    renderCatalog();
+  });
+}
+catalogMore.addEventListener("click", () => {
+  catalogVisible += 36;
+  renderCatalog();
 });
 
 resizeInput();
