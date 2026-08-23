@@ -24,6 +24,22 @@ type ChatBody = {
   messages: ClientMessage[];
 };
 
+type RequestIdentity = {
+  id: string;
+  email: string | null;
+  provider: "cloudflare-access" | "anonymous";
+  subject: string;
+};
+
+type UsageReservation = {
+  identity: RequestIdentity;
+  usageDate: string;
+  userCount: number;
+  globalCount: number;
+  userLimit: number | null;
+  globalLimit: number | null;
+};
+
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store",
@@ -56,8 +72,175 @@ function parseChatBody(value: unknown): ChatBody | null {
   return { messages };
 }
 
+function parsePositiveLimit(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function utcDateKey(date = new Date()): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function secondsUntilUtcMidnight(): number {
+  const now = new Date();
+  const midnight = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() + 1,
+  );
+  return Math.max(1, Math.ceil((midnight - now.getTime()) / 1_000));
+}
+
+async function sha256(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function identifyRequest(request: Request): Promise<RequestIdentity> {
+  const accessEmail = request.headers
+    .get("cf-access-authenticated-user-email")
+    ?.trim()
+    .toLowerCase();
+  if (accessEmail) {
+    return {
+      id: await sha256(`cloudflare-access:${accessEmail}`),
+      email: accessEmail,
+      provider: "cloudflare-access",
+      subject: accessEmail,
+    };
+  }
+
+  const address = request.headers.get("cf-connecting-ip")?.trim() || "unknown";
+  return {
+    id: await sha256(`anonymous:${address}`),
+    email: null,
+    provider: "anonymous",
+    subject: await sha256(address),
+  };
+}
+
+async function reserveUsage(
+  request: Request,
+  env: Env,
+): Promise<UsageReservation | null> {
+  if (!env.DB) return null;
+
+  const identity = await identifyRequest(request);
+  const usageDate = utcDateKey();
+  const now = new Date().toISOString();
+  const userLimit = parsePositiveLimit(env.DAILY_USER_LIMIT);
+  const globalLimit = parsePositiveLimit(env.DAILY_GLOBAL_LIMIT);
+
+  await env.DB.prepare(
+    `INSERT INTO users (id, email, auth_provider, external_subject, last_seen_at)
+     VALUES (?1, ?2, ?3, ?4, ?5)
+     ON CONFLICT(id) DO UPDATE SET
+       email = excluded.email,
+       auth_provider = excluded.auth_provider,
+       external_subject = excluded.external_subject,
+       last_seen_at = excluded.last_seen_at`,
+  )
+    .bind(identity.id, identity.email, identity.provider, identity.subject, now)
+    .run();
+
+  const userUsage = await env.DB.prepare(
+    `INSERT INTO daily_usage (user_id, usage_date, request_count, last_request_at)
+     VALUES (?1, ?2, 1, ?3)
+     ON CONFLICT(user_id, usage_date) DO UPDATE SET
+       request_count = request_count + 1,
+       last_request_at = excluded.last_request_at
+     RETURNING request_count`,
+  )
+    .bind(identity.id, usageDate, now)
+    .first<{ request_count: number }>();
+
+  const globalUsage = await env.DB.prepare(
+    `INSERT INTO global_daily_usage (usage_date, request_count, last_request_at)
+     VALUES (?1, 1, ?2)
+     ON CONFLICT(usage_date) DO UPDATE SET
+       request_count = request_count + 1,
+       last_request_at = excluded.last_request_at
+     RETURNING request_count`,
+  )
+    .bind(usageDate, now)
+    .first<{ request_count: number }>();
+
+  return {
+    identity,
+    usageDate,
+    userCount: Number(userUsage?.request_count ?? 1),
+    globalCount: Number(globalUsage?.request_count ?? 1),
+    userLimit,
+    globalLimit,
+  };
+}
+
+function usageLimitResponse(reservation: UsageReservation): Response | null {
+  const userExceeded =
+    reservation.userLimit !== null &&
+    reservation.userCount > reservation.userLimit;
+  const globalExceeded =
+    reservation.globalLimit !== null &&
+    reservation.globalCount > reservation.globalLimit;
+  if (!userExceeded && !globalExceeded) return null;
+
+  return Response.json(
+    {
+      error: userExceeded
+        ? "Você atingiu o limite diário de perguntas. Tente novamente amanhã."
+        : "A biblioteca atingiu o limite diário de uso. Tente novamente amanhã.",
+      code: userExceeded ? "USER_DAILY_LIMIT" : "GLOBAL_DAILY_LIMIT",
+    },
+    {
+      status: 429,
+      headers: {
+        ...JSON_HEADERS,
+        "retry-after": String(secondsUntilUtcMidnight()),
+      },
+    },
+  );
+}
+
+async function recordUsageOutcome(
+  env: Env,
+  reservation: UsageReservation | null,
+  outcome: "success" | "error",
+): Promise<void> {
+  if (!env.DB || !reservation) return;
+  const column = outcome === "success" ? "success_count" : "error_count";
+  await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE daily_usage SET ${column} = ${column} + 1
+       WHERE user_id = ?1 AND usage_date = ?2`,
+    ).bind(reservation.identity.id, reservation.usageDate),
+    env.DB.prepare(
+      `UPDATE global_daily_usage SET ${column} = ${column} + 1
+       WHERE usage_date = ?1`,
+    ).bind(reservation.usageDate),
+  ]);
+}
+
+function usageHeaders(reservation: UsageReservation | null): HeadersInit {
+  if (!reservation) return {};
+  const headers: Record<string, string> = {
+    "x-usage-user-today": String(reservation.userCount),
+    "x-usage-global-today": String(reservation.globalCount),
+  };
+  if (reservation.userLimit !== null) {
+    headers["x-ratelimit-limit"] = String(reservation.userLimit);
+    headers["x-ratelimit-remaining"] = String(
+      Math.max(0, reservation.userLimit - reservation.userCount),
+    );
+  }
+  return headers;
+}
+
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/health" && request.method === "GET") {
@@ -99,6 +282,25 @@ export default {
       return jsonError("Envie uma conversa válida terminando com uma pergunta.", 400);
     }
 
+    let reservation: UsageReservation | null = null;
+    try {
+      reservation = await reserveUsage(request, env);
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          message: "D1 usage reservation failed",
+          error: error instanceof Error ? error.message : String(error),
+          path: url.pathname,
+        }),
+      );
+      return jsonError("O controle de uso está temporariamente indisponível.", 503);
+    }
+
+    if (reservation) {
+      const limitResponse = usageLimitResponse(reservation);
+      if (limitResponse) return limitResponse;
+    }
+
     try {
       const stream = await env.AI_SEARCH.chatCompletions({
         messages: [
@@ -116,11 +318,14 @@ export default {
         }),
       );
 
+      ctx.waitUntil(recordUsageOutcome(env, reservation, "success"));
+
       return new Response(stream, {
         headers: {
           "content-type": "text/event-stream; charset=utf-8",
           "cache-control": "no-cache, no-store",
           "x-content-type-options": "nosniff",
+          ...usageHeaders(reservation),
         },
       });
     } catch (error) {
@@ -141,6 +346,7 @@ export default {
           path: url.pathname,
         }),
       );
+      ctx.waitUntil(recordUsageOutcome(env, reservation, "error"));
       return jsonError("Não foi possível consultar a biblioteca agora.", 502);
     }
   },
