@@ -224,6 +224,51 @@ h1 span { color: var(--accent); }
 .message.assistant .message-content { background: rgba(16, 37, 28, .76); }
 .message.error .message-content { color: var(--danger); border-color: rgba(255, 157, 143, .35); }
 
+.math-expression {
+  position: relative;
+  color: var(--text);
+  white-space: normal;
+}
+.math-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: .18rem;
+  margin-inline: .08rem;
+  vertical-align: -.12em;
+}
+.math-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+  max-width: 100%;
+  margin: .8rem 0;
+  padding: .85rem .75rem;
+  border: 1px solid var(--line);
+  border-radius: .8rem;
+  overflow-x: auto;
+  background: rgba(8, 20, 14, .55);
+}
+.math-expression math { flex: 0 0 auto; color: inherit; font-size: 1.12em; }
+.math-copy {
+  flex: 0 0 auto;
+  padding: .28rem .42rem;
+  border: 1px solid rgba(242, 203, 105, .24);
+  border-radius: .45rem;
+  color: var(--accent);
+  background: rgba(242, 203, 105, .06);
+  font-size: .62rem;
+  cursor: pointer;
+}
+.math-inline .math-copy {
+  padding: .04rem .2rem;
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  opacity: .7;
+}
+.math-copy:hover { border-color: rgba(242, 203, 105, .5); opacity: 1; }
+
 .typing::after {
   content: "";
   display: inline-block;
