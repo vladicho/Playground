@@ -1,0 +1,1544 @@
+{
+  "version": 1,
+  "generatedFrom": "catálogo autorizado pelo proprietário",
+  "count": 256,
+  "books": [
+    {
+      "title": "(V.Prasolov,I. Sharygin) Problemas de Geometría Plana -En Inglés",
+      "filename": "(V.Prasolov,I. Sharygin) Problemas de Geometría Plana -En Inglés.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "300 MODELOS DE ORIGAMI PARA NO ABURRIRSE CON LAS MATEMÁTICAS",
+      "filename": "300 MODELOS DE ORIGAMI PARA NO ABURRIRSE CON LAS MATEMÁTICAS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "4  PROBLEMAS ARITMÉTICOS",
+      "filename": "4  PROBLEMAS ARITMÉTICOS.pdf",
+      "category": "Aritmética",
+      "indexed": true
+    },
+    {
+      "title": "A. S. Bársov.- Qué es la programación lineal",
+      "filename": "A. S. Bársov.- Qué es la programación lineal.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "A.A. Belskin & L.A. Kaluzhnin.- División inexacta",
+      "filename": "A.A. Belskin & L.A. Kaluzhnin.- División inexacta.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "A.I. Fetísov .- Acerca de la demostración en geometría",
+      "filename": "A.I. Fetísov .- Acerca de la demostración en geometría.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "A.I.- Markushevich.- Áreas y logaritmos",
+      "filename": "A.I.- Markushevich.- Áreas y logaritmos.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "A.N. Kostovski .- Construcciones geométricas mediante un compás",
+      "filename": "A.N. Kostovski .- Construcciones geométricas mediante un compás.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "A.S. Smogorzhevski.- Acerca de la geometría de Lobachevski",
+      "filename": "A.S. Smogorzhevski.- Acerca de la geometría de Lobachevski.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "A.S. Smogorzhevski.- La regla en construcciones geométricas",
+      "filename": "A.S. Smogorzhevski.- La regla en construcciones geométricas.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "A.S. Solodovnikov.- Sistemas de desigualdades lineales",
+      "filename": "A.S. Solodovnikov.- Sistemas de desigualdades lineales.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "ALGEBRA de BALDOR",
+      "filename": "ALGEBRA de BALDOR.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "ALGEBRA UNA REQUI",
+      "filename": "ALGEBRA UNA REQUI.pdf",
+      "category": "Álgebra",
+      "indexed": true
+    },
+    {
+      "title": "ALGEBRA_EXTRAORDINARIA",
+      "filename": "ALGEBRA_EXTRAORDINARIA.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "Algebra_Lineal_e_Geometria_Euclidiana",
+      "filename": "Algebra_Lineal_e_Geometria_Euclidiana.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": true
+    },
+    {
+      "title": "Algunos Ejercicios Resueltos del Curso de Geometría Métrica de Puig Adams",
+      "filename": "Algunos Ejercicios Resueltos del Curso de Geometría Métrica de Puig Adams.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ANÁLISIS COMBINATORIO Y PROBLEMAS",
+      "filename": "ANÁLISIS COMBINATORIO Y PROBLEMAS.pdf",
+      "category": "Matemática discreta",
+      "indexed": false
+    },
+    {
+      "title": "ANÁLISIS MULTIVARIADO",
+      "filename": "ANÁLISIS MULTIVARIADO.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "ANÁLISIS VECTORIAL",
+      "filename": "ANÁLISIS VECTORIAL.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "Apostol, Calculus - VOLUMEN (1)",
+      "filename": "Apostol, Calculus - VOLUMEN (1).pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "Apostol, Calculus - VOLUMEN (2)",
+      "filename": "Apostol, Calculus - VOLUMEN (2).pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "ARITMÉTICA",
+      "filename": "ARITMÉTICA.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "ARITMÉTICA DE BALDOR",
+      "filename": "ARITMÉTICA DE BALDOR.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "ARITMÉTICA-ELEMENTAL",
+      "filename": "ARITMÉTICA-ELEMENTAL.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "ARITMÉTICA-LIBRO DEL MAESTRO. EDITORIAL BRUÑO",
+      "filename": "ARITMÉTICA-LIBRO DEL MAESTRO. EDITORIAL BRUÑO.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "ARITMÉTICA-RACSO",
+      "filename": "ARITMÉTICA-RACSO.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "ARITMÉTICA-UNICIENCIA",
+      "filename": "ARITMÉTICA-UNICIENCIA.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "Artículo Sobre la Geometría Fractal",
+      "filename": "Artículo Sobre la Geometría Fractal.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Artimetica",
+      "filename": "Artimetica.pdf",
+      "category": "Matemática geral",
+      "indexed": true
+    },
+    {
+      "title": "Astronomía Universal Teórica y Práctica",
+      "filename": "Astronomía Universal Teórica y Práctica.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "B.A. Rosenfeld & N.D. Sergeeva.- Proyección estereográfica",
+      "filename": "B.A. Rosenfeld & N.D. Sergeeva.- Proyección estereográfica.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "B.A. Trajtenbrot.- Algoritmos y la resolución automática",
+      "filename": "B.A. Trajtenbrot.- Algoritmos y la resolución automática.pdf",
+      "category": "Matemática discreta",
+      "indexed": false
+    },
+    {
+      "title": "Baldor Geometría y Trigonometría",
+      "filename": "Baldor Geometría y Trigonometría.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Biografía de Carnot",
+      "filename": "Biografía de Carnot.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Breve Curso de Matemáticas Superiores-KUDRIAVTSEV",
+      "filename": "Breve Curso de Matemáticas Superiores-KUDRIAVTSEV.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Breve Explicación sobre la Proporción Áurea",
+      "filename": "Breve Explicación sobre la Proporción Áurea.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Breve Explicación Sobre los Logaritmos",
+      "filename": "Breve Explicación Sobre los Logaritmos.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "BUENA EXPOSICIÓN DE MATEMÁTICAS DISCRETAS",
+      "filename": "BUENA EXPOSICIÓN DE MATEMÁTICAS DISCRETAS.pdf",
+      "category": "Matemática discreta",
+      "indexed": true
+    },
+    {
+      "title": "Cálculo - Lethoith",
+      "filename": "Cálculo - Lethoith.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CÁLCULO DIFERENCIAL   E   INTEGRAL",
+      "filename": "CÁLCULO DIFERENCIAL   E   INTEGRAL.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "Cálculo Diferencial e Integral de una Función Variable",
+      "filename": "Cálculo Diferencial e Integral de una Función Variable.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "Cálculo Diferencial en Varias Variables",
+      "filename": "Cálculo Diferencial en Varias Variables.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CÁLCULO INFINETESIMAL- J. REY PASTOR",
+      "filename": "CÁLCULO INFINETESIMAL- J. REY PASTOR.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CÁLCULO INFINITESIMAL",
+      "filename": "CÁLCULO INFINITESIMAL.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CÁLCULO VARIACIONAL",
+      "filename": "CÁLCULO VARIACIONAL.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CÁLCULO VECTORIAL",
+      "filename": "CÁLCULO VECTORIAL.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "Calculo Vectorial - Claudio Pita Ruiz",
+      "filename": "Calculo Vectorial - Claudio Pita Ruiz.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CÁLCULO VolII",
+      "filename": "CÁLCULO VolII.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CÁLCULO Y GEOMETRÍA ANALÍTICA- PARTE I",
+      "filename": "CÁLCULO Y GEOMETRÍA ANALÍTICA- PARTE I.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CÁLCULO-PROBLEMAS Y SOLUCIONES",
+      "filename": "CÁLCULO-PROBLEMAS Y SOLUCIONES.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CÁLCULO, LARSON- VOLUMEN (1)",
+      "filename": "CÁLCULO, LARSON- VOLUMEN (1).pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CÁLCULO, LARSON- VOLUMEN (2)",
+      "filename": "CÁLCULO, LARSON- VOLUMEN (2).pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CARLOS IVORRA CASTILLO",
+      "filename": "CARLOS IVORRA CASTILLO.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Challenging Problems in Algebra - Posamentier,Salkind-Dover",
+      "filename": "Challenging Problems in Algebra - Posamentier,Salkind-Dover.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "Challenging Problemsin Geometry - Posamentier,Salkind-Dover",
+      "filename": "Challenging Problemsin Geometry - Posamentier,Salkind-Dover.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "CHINEA CARLOS - Extensiones Algebraicas",
+      "filename": "CHINEA CARLOS - Extensiones Algebraicas.PDF",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "CHINEA CARLOS - Sobre La Inducción Matematica",
+      "filename": "CHINEA CARLOS - Sobre La Inducción Matematica.PDF",
+      "category": "Matemática discreta",
+      "indexed": false
+    },
+    {
+      "title": "Cicloides y Demás",
+      "filename": "Cicloides y Demás.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Ciencia recreativa - Jose Estalella",
+      "filename": "Ciencia recreativa - Jose Estalella.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Circunferencia de Apolonio",
+      "filename": "Circunferencia de Apolonio.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Circunferencia y Círculos",
+      "filename": "Circunferencia y Círculos.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Colección de Problemas de Aritmética",
+      "filename": "Colección de Problemas de Aritmética.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "COMBINATORIA",
+      "filename": "COMBINATORIA.pdf",
+      "category": "Matemática discreta",
+      "indexed": false
+    },
+    {
+      "title": "CÓMO ENTENDER Y HACER LAS DEMOSTRACIONES MATEMÁTICAS",
+      "filename": "CÓMO ENTENDER Y HACER LAS DEMOSTRACIONES MATEMÁTICAS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "CÓMO PLANTEAR Y RESOLVER PROBLEMAS",
+      "filename": "CÓMO PLANTEAR Y RESOLVER PROBLEMAS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "CÓMO RESOLVER PROBLEMAS",
+      "filename": "CÓMO RESOLVER PROBLEMAS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Compendio de Artículos de Wikipedia",
+      "filename": "Compendio de Artículos de Wikipedia.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Compendio de Geometría",
+      "filename": "Compendio de Geometría.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "COMPENDIO DE MATEMÁTICAS PURAS Y MIXTAS",
+      "filename": "COMPENDIO DE MATEMÁTICAS PURAS Y MIXTAS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "COMPENDIO MATEMÁTICO II",
+      "filename": "COMPENDIO MATEMÁTICO II.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "COMPENDIO MATEMÁTICO III",
+      "filename": "COMPENDIO MATEMÁTICO III.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "COMPENDIO METEMÁTICO",
+      "filename": "COMPENDIO METEMÁTICO.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Complemento Teórico de Construcciones Geométricas con Regla y Compás",
+      "filename": "Complemento Teórico de Construcciones Geométricas con Regla y Compás.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Complemento Teórico de Geometría",
+      "filename": "Complemento Teórico de Geometría.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "CONCEPTOS FUNDAMENTALES DEL ÁLGEBRA BÁSICA",
+      "filename": "CONCEPTOS FUNDAMENTALES DEL ÁLGEBRA BÁSICA.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "Condiciones de Concurrencia y Colinealidad",
+      "filename": "Condiciones de Concurrencia y Colinealidad.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "CONSTRUCCIONES   GEOMÉTRICAS",
+      "filename": "CONSTRUCCIONES   GEOMÉTRICAS.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Construcciones Geométricas-Efraín Soto Apolinar",
+      "filename": "Construcciones Geométricas-Efraín Soto Apolinar.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "COXETER GEOMETRÍA",
+      "filename": "COXETER GEOMETRÍA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "CURSILLO PI, GEOMETRÍA DEL ESPACIO",
+      "filename": "CURSILLO PI, GEOMETRÍA DEL ESPACIO.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "CURSO BREVE DE GEOMETRÍA ANALÍTICA",
+      "filename": "CURSO BREVE DE GEOMETRÍA ANALÍTICA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "CURSO DE ALGEBRA SUPERIOR KUROSCH",
+      "filename": "CURSO DE ALGEBRA SUPERIOR KUROSCH.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "CURSO DE ANÁLISIS MATEMÁTICO I",
+      "filename": "CURSO DE ANÁLISIS MATEMÁTICO I.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CURSO DE ANÁLISIS MATEMÁTICO II",
+      "filename": "CURSO DE ANÁLISIS MATEMÁTICO II.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "CURSO DE GEOMETRÍA",
+      "filename": "CURSO DE GEOMETRÍA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "CURSO DE LA TEORÍA DE LOS EXTREMALES",
+      "filename": "CURSO DE LA TEORÍA DE LOS EXTREMALES.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Curso Elemental de Aritmética",
+      "filename": "Curso Elemental de Aritmética.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "Curso Superior de Aritmética",
+      "filename": "Curso Superior de Aritmética.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "Curso Superior de Aritmética. Editorial Bruño",
+      "filename": "Curso Superior de Aritmética. Editorial Bruño.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "CURSO SUPERIOR DE GEOMETRÍA",
+      "filename": "CURSO SUPERIOR DE GEOMETRÍA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "DEDUCCIÓN DE LA FÓRMULA DE HERÓN",
+      "filename": "DEDUCCIÓN DE LA FÓRMULA DE HERÓN.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "DEFINICIONES Y PROBLEMAS DE ARITMÉTICA",
+      "filename": "DEFINICIONES Y PROBLEMAS DE ARITMÉTICA.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "DESIGUALDADES",
+      "filename": "DESIGUALDADES.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "DIBUJO GEOMÉTRICO",
+      "filename": "DIBUJO GEOMÉTRICO.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "DICCIONARIO ILUSTRADO DE CONCEPTOS MATEMÁTICOS",
+      "filename": "DICCIONARIO ILUSTRADO DE CONCEPTOS MATEMÁTICOS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Didascalia Geométrica",
+      "filename": "Didascalia Geométrica.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "DISQUISITIONES ARITHMETICAE",
+      "filename": "DISQUISITIONES ARITHMETICAE.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "E.S. Véntesl .- Elementos de la teoría de juegos",
+      "filename": "E.S. Véntesl .- Elementos de la teoría de juegos.pdf",
+      "category": "Matemática discreta",
+      "indexed": false
+    },
+    {
+      "title": "Ecuación Paramétrica",
+      "filename": "Ecuación Paramétrica.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "ECUACIONES ALGEBRÁICAS DE GRADOS ARBITRARIOS",
+      "filename": "ECUACIONES ALGEBRÁICAS DE GRADOS ARBITRARIOS.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "Ecuaciones Diferenciales - Espinoza Ramos - pdf",
+      "filename": "Ecuaciones Diferenciales - Espinoza Ramos - pdf.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "ECUACIONES DIFERENCIALES EN DERIVADAS PARCIALES",
+      "filename": "ECUACIONES DIFERENCIALES EN DERIVADAS PARCIALES.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "ECUACIONES DIFERENCIALES Y CÁLCULO VARIACIONAL",
+      "filename": "ECUACIONES DIFERENCIALES Y CÁLCULO VARIACIONAL.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "ECUACIONES FUNCIONALES I",
+      "filename": "ECUACIONES FUNCIONALES I.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "ECUACIONES FUNCIONALES II",
+      "filename": "ECUACIONES FUNCIONALES II.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "ECUACIONES INTEGRALES",
+      "filename": "ECUACIONES INTEGRALES.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS DE ANÁLISIS MATEMÁTICO",
+      "filename": "EJERCICIOS DE ANÁLISIS MATEMÁTICO.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS DE CÁLCULO-EDITORIAL BRUÑO",
+      "filename": "EJERCICIOS DE CÁLCULO-EDITORIAL BRUÑO.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS DE SELECCIÓN MÚLTIPLE",
+      "filename": "EJERCICIOS DE SELECCIÓN MÚLTIPLE.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS FIUNA (1)",
+      "filename": "EJERCICIOS FIUNA (1).pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS FIUNA (2)",
+      "filename": "EJERCICIOS FIUNA (2).pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS FIUNA (3)",
+      "filename": "EJERCICIOS FIUNA (3).pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS FIUNA (4)",
+      "filename": "EJERCICIOS FIUNA (4).pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS FIUNA (5)",
+      "filename": "EJERCICIOS FIUNA (5).pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS FIUNA (6)",
+      "filename": "EJERCICIOS FIUNA (6).pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS Y PROBLEMAS DE MATEMÁTICAS SUPERIORES-VOLUMEN I",
+      "filename": "EJERCICIOS Y PROBLEMAS DE MATEMÁTICAS SUPERIORES-VOLUMEN I.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "EJERCICIOS Y PROBLEMAS DE MATEMÁTICAS SUPERIORES-VOLUMEN II",
+      "filename": "EJERCICIOS Y PROBLEMAS DE MATEMÁTICAS SUPERIORES-VOLUMEN II.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "EL CONCEPTO DE NÚMERO",
+      "filename": "EL CONCEPTO DE NÚMERO.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "EL CUERPO DE LOS COMPLEJOS",
+      "filename": "EL CUERPO DE LOS COMPLEJOS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "EL MÉTODO DE LAS COORDENADAS",
+      "filename": "EL MÉTODO DE LAS COORDENADAS.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DE ARITMÉTICA, ÁLGEBRA Y GEOMETRÍA",
+      "filename": "ELEMENTOS DE ARITMÉTICA, ÁLGEBRA Y GEOMETRÍA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DE EUCLIDES",
+      "filename": "ELEMENTOS DE EUCLIDES.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DE EUCLIDES I-IV",
+      "filename": "ELEMENTOS DE EUCLIDES I-IV.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DE GEOMETÍA PLANA Y SÓLIDA",
+      "filename": "ELEMENTOS DE GEOMETÍA PLANA Y SÓLIDA.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DE GEOMETRÍA",
+      "filename": "ELEMENTOS DE GEOMETRÍA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DE GEOMETRÍA CON NOTAS",
+      "filename": "ELEMENTOS DE GEOMETRÍA CON NOTAS.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DE GEOMETRÍA- EDITORIAL BRUÑO",
+      "filename": "ELEMENTOS DE GEOMETRÍA- EDITORIAL BRUÑO.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DE LA GEOMETRÍA DE SÓLIDOS-EN INGLÉS",
+      "filename": "ELEMENTOS DE LA GEOMETRÍA DE SÓLIDOS-EN INGLÉS.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DE LA TEORÍA DE LAS FUNCIONES",
+      "filename": "ELEMENTOS DE LA TEORÍA DE LAS FUNCIONES.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DE MATEMÁTICAS",
+      "filename": "ELEMENTOS DE MATEMÁTICAS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Elementos de Trigonometría Plana-Inglés",
+      "filename": "Elementos de Trigonometría Plana-Inglés.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DEL ÁLGEBRA LINEAL Y GEOMETRÍA ANALÍTICA",
+      "filename": "ELEMENTOS DEL ÁLGEBRA LINEAL Y GEOMETRÍA ANALÍTICA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS DEL ANÁLISIS MATEMÁTICO",
+      "filename": "ELEMENTOS DEL ANÁLISIS MATEMÁTICO.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "ELEMENTOS GEOMÉTRICOS DE EUCLIDES",
+      "filename": "ELEMENTOS GEOMÉTRICOS DE EUCLIDES.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Elementos Trigonometria Esférica",
+      "filename": "Elementos Trigonometria Esférica.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "EMALCA-PERÚ Curso Básico de Teoría de la Medida",
+      "filename": "EMALCA-PERÚ Curso Básico de Teoría de la Medida.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "ESPACIOS Y VECTORES Y GEOMETRÍA ANALÍTICA",
+      "filename": "ESPACIOS Y VECTORES Y GEOMETRÍA ANALÍTICA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "ESTADÍSTICA MATEMÁTICA",
+      "filename": "ESTADÍSTICA MATEMÁTICA.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Estrategias para Resolver Problemas-En Inglés",
+      "filename": "Estrategias para Resolver Problemas-En Inglés.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "ESTRUCTURAS ALGEBRAICAS",
+      "filename": "ESTRUCTURAS ALGEBRAICAS.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "ESTRUCTURAS ALGEBRAICAS II",
+      "filename": "ESTRUCTURAS ALGEBRAICAS II.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "ESTRUCTURAS ALGEBRAICAS III",
+      "filename": "ESTRUCTURAS ALGEBRAICAS III.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "ESTRUCTURAS ALGEBRAICAS IV",
+      "filename": "ESTRUCTURAS ALGEBRAICAS IV.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "ESTRUCTURAS ALGEBRAICAS V",
+      "filename": "ESTRUCTURAS ALGEBRAICAS V.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "ESTRUCTURAS ALGEBRAICAS VI",
+      "filename": "ESTRUCTURAS ALGEBRAICAS VI.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "ESTRUCTURAS ALGEBRAICAS VII",
+      "filename": "ESTRUCTURAS ALGEBRAICAS VII.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "EXÁMENES ANTERIORES UNI",
+      "filename": "EXÁMENES ANTERIORES UNI.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Física-Colección Racso",
+      "filename": "Física-Colección Racso.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "FORMULARIO",
+      "filename": "FORMULARIO.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Fórmulas Matemáticas Lexus",
+      "filename": "Fórmulas Matemáticas Lexus.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Frank Ayres - Serie Schaum",
+      "filename": "Frank Ayres - Serie Schaum.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "FUNCIONES DE VARIABLE COMPLEJA",
+      "filename": "FUNCIONES DE VARIABLE COMPLEJA.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "FUNÇOES REAIS",
+      "filename": "FUNÇOES REAIS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Funcoes_Reais",
+      "filename": "Funcoes_Reais.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Fundamentos de Geometria - HSM Coxeter",
+      "filename": "Fundamentos de Geometria - HSM Coxeter.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Fundamentos de Geometría-En Portugués",
+      "filename": "Fundamentos de Geometría-En Portugués.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "FUNDAMENTOS DE LA MATEMATICA",
+      "filename": "FUNDAMENTOS DE LA MATEMATICA.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "FUNDAMENTOS DE LA MATEMÁTICA DISCRETA",
+      "filename": "FUNDAMENTOS DE LA MATEMÁTICA DISCRETA.pdf",
+      "category": "Matemática discreta",
+      "indexed": false
+    },
+    {
+      "title": "FUNDAMENTOS DE LA TEORÍA DE LOS NÚMEROS",
+      "filename": "FUNDAMENTOS DE LA TEORÍA DE LOS NÚMEROS.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "FUNDAMENTOS DE LAS MATEMÁTICAS SUPERIORES",
+      "filename": "FUNDAMENTOS DE LAS MATEMÁTICAS SUPERIORES.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "FUNDAMENTOS DE MATEMÁTICA DISCRETA",
+      "filename": "FUNDAMENTOS DE MATEMÁTICA DISCRETA.pdf",
+      "category": "Matemática discreta",
+      "indexed": false
+    },
+    {
+      "title": "FUNDAMENTOS DEL ÁLGEBRA LINEAL",
+      "filename": "FUNDAMENTOS DEL ÁLGEBRA LINEAL.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "FUNDAMENTOS DEL ANÁLISIS MATEMÁTICO TOMO I",
+      "filename": "FUNDAMENTOS DEL ANÁLISIS MATEMÁTICO TOMO I.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "FUNDAMENTOS DEL ANÁLISIS MATEMÁTICO-TOMO II",
+      "filename": "FUNDAMENTOS DEL ANÁLISIS MATEMÁTICO-TOMO II.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "FUNDAMENTOS DEL ANÁLISIS MATEMÁTICO-TOMO III",
+      "filename": "FUNDAMENTOS DEL ANÁLISIS MATEMÁTICO-TOMO III.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "FUNDAMENTOS MATEMÁTICOS DE LA CIBERNÉTICA",
+      "filename": "FUNDAMENTOS MATEMÁTICOS DE LA CIBERNÉTICA.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "G.E. Shilov.- Análisis matemático en los racionales",
+      "filename": "G.E. Shilov.- Análisis matemático en los racionales.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "G.E. Shilov.- Gama simple & como construir las gráficas",
+      "filename": "G.E. Shilov.- Gama simple & como construir las gráficas.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "G.M.Bruño- Ejercicios y Problemas de Trigonometría con sus Resoluciones y Respuestas",
+      "filename": "G.M.Bruño- Ejercicios y Problemas de Trigonometría con sus Resoluciones y Respuestas.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEIMETRÍA UCAP",
+      "filename": "GEIMETRÍA UCAP.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA",
+      "filename": "GEOMETRÍA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA  DESCRIPTIVA",
+      "filename": "GEOMETRÍA  DESCRIPTIVA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría - Clemens",
+      "filename": "Geometría - Clemens.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría - Moise Downs",
+      "filename": "Geometría - Moise Downs.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría 1 (Bollati Boringhieri 1989)",
+      "filename": "Geometría 1 (Bollati Boringhieri 1989).pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría Analítca",
+      "filename": "Geometría Analítca.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría Analítica",
+      "filename": "Geometría Analítica.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA ANALÍTICA LEHMAN",
+      "filename": "GEOMETRÍA ANALÍTICA LEHMAN.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA ANALÍTICA VECTORIAL",
+      "filename": "GEOMETRÍA ANALÍTICA VECTORIAL.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría Analítica-Elena de Oteyza",
+      "filename": "Geometría Analítica-Elena de Oteyza.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría Arrayan",
+      "filename": "Geometría Arrayan.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA AVANZADA",
+      "filename": "GEOMETRÍA AVANZADA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría de las Olimpiadas de Matemáticas",
+      "filename": "Geometría de las Olimpiadas de Matemáticas.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría de los Sólidos-En Inglés",
+      "filename": "Geometría de los Sólidos-En Inglés.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA DE VECTORES",
+      "filename": "GEOMETRÍA DE VECTORES.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA DESCRIPTIVA I",
+      "filename": "GEOMETRÍA DESCRIPTIVA I.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría Descriptiva.",
+      "filename": "Geometría Descriptiva..pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA DIFERENCIAL",
+      "filename": "GEOMETRÍA DIFERENCIAL.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA ELEMENTAL",
+      "filename": "GEOMETRÍA ELEMENTAL.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría Elemental de Bachillerato. Editorial Bruño",
+      "filename": "Geometría Elemental de Bachillerato. Editorial Bruño.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometria Elemental-POGORELOV",
+      "filename": "Geometria Elemental-POGORELOV.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA ESPACIAL",
+      "filename": "GEOMETRÍA ESPACIAL.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA ESPECULATIVA Y PRÁCTICA",
+      "filename": "GEOMETRÍA ESPECULATIVA Y PRÁCTICA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA EUCLIDIANA PLANA",
+      "filename": "GEOMETRÍA EUCLIDIANA PLANA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA I",
+      "filename": "GEOMETRÍA I.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA II",
+      "filename": "GEOMETRÍA II.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA II SERNESI-1994",
+      "filename": "GEOMETRÍA II SERNESI-1994.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA III",
+      "filename": "GEOMETRÍA III.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA MEDIA",
+      "filename": "GEOMETRÍA MEDIA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA MÉTRICA EN EL PLANO Y EN EL ESPACIO",
+      "filename": "GEOMETRÍA MÉTRICA EN EL PLANO Y EN EL ESPACIO.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA MÉTRICA EN PORTUGUÉS",
+      "filename": "GEOMETRÍA MÉTRICA EN PORTUGUÉS.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA MODERNA",
+      "filename": "GEOMETRÍA MODERNA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA MODERNA 1",
+      "filename": "GEOMETRÍA MODERNA 1.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA PLANA",
+      "filename": "GEOMETRÍA PLANA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA PLANA Y ESPACIAL",
+      "filename": "GEOMETRÍA PLANA Y ESPACIAL.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA PLANA.PROBLEMAS Y SU RESOLUCIÓN",
+      "filename": "GEOMETRÍA PLANA.PROBLEMAS Y SU RESOLUCIÓN.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría Recreativa",
+      "filename": "Geometría Recreativa.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometría Superior-Solucionario de la Editorial Bruño",
+      "filename": "Geometría Superior-Solucionario de la Editorial Bruño.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA USB",
+      "filename": "GEOMETRÍA USB.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA Y PLANIMETRÍA",
+      "filename": "GEOMETRÍA Y PLANIMETRÍA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍA Y TRIGONOMETRÍA",
+      "filename": "GEOMETRÍA Y TRIGONOMETRÍA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometria y Trigonometria CONAMAT",
+      "filename": "Geometria y Trigonometria CONAMAT.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometria-Superior-EFIMOV",
+      "filename": "Geometria-Superior-EFIMOV.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Geometria, Carlos Mercado Schuler",
+      "filename": "Geometria, Carlos Mercado Schuler.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "GEOMETRÍAS NO EUCLIDIANAS",
+      "filename": "GEOMETRÍAS NO EUCLIDIANAS.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "HISTORIAS DE LAS IDEAS MODERNAS EN MATEMÁTICA",
+      "filename": "HISTORIAS DE LAS IDEAS MODERNAS EN MATEMÁTICA.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "I.M. Sobol.- Método de Montecarlo",
+      "filename": "I.M. Sobol.- Método de Montecarlo.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "I.M. Yaglom.- Álgebra extraordinaria",
+      "filename": "I.M. Yaglom.- Álgebra extraordinaria.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "I.P. Natanson.- Problemas Elementales de máximos y mínimos & suma de cantidaes infinitas",
+      "filename": "I.P. Natanson.- Problemas Elementales de máximos y mínimos & suma de cantidaes infinitas.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUÇÂO A ANÁLISIS FUNCIONAL",
+      "filename": "INTRODUÇÂO A ANÁLISIS FUNCIONAL.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "Introducao_a_analise_funcional",
+      "filename": "Introducao_a_analise_funcional.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "Introduccion a la Geometria Moderna Levi-Shively",
+      "filename": "Introduccion a la Geometria Moderna Levi-Shively.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUCCIÓN A LA GEOMETRÍA SUPERIOR",
+      "filename": "INTRODUCCIÓN A LA GEOMETRÍA SUPERIOR.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUCCIÓN A LA INTEGRAL DE LEBESGUE EN LA RECTA",
+      "filename": "INTRODUCCIÓN A LA INTEGRAL DE LEBESGUE EN LA RECTA.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUCCIÓN A LA TEORÍA DE LAS PROBABILIDADES",
+      "filename": "INTRODUCCIÓN A LA TEORÍA DE LAS PROBABILIDADES.pdf",
+      "category": "Estatística e probabilidade",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUCCIÓN A LA TEORÍA DE LOS MÉTODOS NUMÉRICOS",
+      "filename": "INTRODUCCIÓN A LA TEORÍA DE LOS MÉTODOS NUMÉRICOS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUCCIÓN A LA TEORÍA DE LOS NÚMEROS",
+      "filename": "INTRODUCCIÓN A LA TEORÍA DE LOS NÚMEROS.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUCCIÓN A LA TOPOLOGÍA GENERAL",
+      "filename": "INTRODUCCIÓN A LA TOPOLOGÍA GENERAL.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUCCIÓN A LAS ECUACIONES DIOFÁNTICAS",
+      "filename": "INTRODUCCIÓN A LAS ECUACIONES DIOFÁNTICAS.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUCCIÓN AL ÁLGEBRA",
+      "filename": "INTRODUCCIÓN AL ÁLGEBRA.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUCCIÓN AL ÁLGEBRA- EDITORIAL MIR",
+      "filename": "INTRODUCCIÓN AL ÁLGEBRA- EDITORIAL MIR.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "INTRODUCCIÓN MODERNA AL ÁLGEBRA",
+      "filename": "INTRODUCCIÓN MODERNA AL ÁLGEBRA.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "Introduccion_a_la_Topologia_General",
+      "filename": "Introduccion_a_la_Topologia_General.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "IntroduccionalaGeometriaModerna(LeviS.Shively)",
+      "filename": "IntroduccionalaGeometriaModerna(LeviS.Shively).pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "Kudriavtsev- Curso de Análisis Matemático-Volumen 1",
+      "filename": "Kudriavtsev- Curso de Análisis Matemático-Volumen 1.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "L.A. Skorniakov.- Sistemas de ecuaciones lineales",
+      "filename": "L.A. Skorniakov.- Sistemas de ecuaciones lineales.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "L.I. Goloviná & I.M. Yaglóm .- Inducción en la geometría",
+      "filename": "L.I. Goloviná & I.M. Yaglóm .- Inducción en la geometría.pdf",
+      "category": "Matemática discreta",
+      "indexed": false
+    },
+    {
+      "title": "LA REVOLUCIàN EN LAS MATEMµTICAS ESCOLARES",
+      "filename": "LA REVOLUCIàN EN LAS MATEMµTICAS ESCOLARES.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "LA REVOLUCIÓN DE LAS MATEMÁTICAS ESCOLARES",
+      "filename": "LA REVOLUCIÓN DE LAS MATEMÁTICAS ESCOLARES.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "LAS MATEMÁTICAS DEL CÁLCULO",
+      "filename": "LAS MATEMÁTICAS DEL CÁLCULO.pdf",
+      "category": "Cálculo e análise",
+      "indexed": false
+    },
+    {
+      "title": "Lecciones Álgebra Moderna- Robledo",
+      "filename": "Lecciones Álgebra Moderna- Robledo.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "Lecciones De Aritmética",
+      "filename": "Lecciones De Aritmética.pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "Lecciones de aritmetica moderna - A Robledo (vol 2)",
+      "filename": "Lecciones de aritmetica moderna - A Robledo (vol 2).pdf",
+      "category": "Aritmética",
+      "indexed": false
+    },
+    {
+      "title": "LECCIONES DE GEOMETRÍA",
+      "filename": "LECCIONES DE GEOMETRÍA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "LECCIONES SOBRE DERIVADAS PARCIALES",
+      "filename": "LECCIONES SOBRE DERIVADAS PARCIALES.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "LIBRO DE ÁLGEBRA",
+      "filename": "LIBRO DE ÁLGEBRA.pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "LIBRO DE MATEMÁTICA",
+      "filename": "LIBRO DE MATEMÁTICA.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "LIBRO DE MATEMÁTICAS",
+      "filename": "LIBRO DE MATEMÁTICAS.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "LIBRO DE TRIGONOMETRÍA",
+      "filename": "LIBRO DE TRIGONOMETRÍA.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "LIBRO INCOMPLETO DE TRIGONOMETRÍA GRANDVILLE",
+      "filename": "LIBRO INCOMPLETO DE TRIGONOMETRÍA GRANDVILLE.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "LIBRO PURO ALGEBRA (NXPowerLite)",
+      "filename": "LIBRO PURO ALGEBRA (NXPowerLite).pdf",
+      "category": "Álgebra",
+      "indexed": false
+    },
+    {
+      "title": "LIBROS DE EUCLIDES",
+      "filename": "LIBROS DE EUCLIDES.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "LÍNEAS CORTAS-PROBLEMAS Y VARIACIONES",
+      "filename": "LÍNEAS CORTAS-PROBLEMAS Y VARIACIONES.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "LO DEMOSTRABLE E INDEMOSTRABLE",
+      "filename": "LO DEMOSTRABLE E INDEMOSTRABLE.pdf",
+      "category": "Matemática geral",
+      "indexed": false
+    },
+    {
+      "title": "Los Elementos de las Geometrías no Euclidianas-En Inglés",
+      "filename": "Los Elementos de las Geometrías no Euclidianas-En Inglés.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    },
+    {
+      "title": "LOS SEIS PRIMEROS LIBROS DE EUCLIDES",
+      "filename": "LOS SEIS PRIMEROS LIBROS DE EUCLIDES.pdf",
+      "category": "Geometria e trigonometria",
+      "indexed": false
+    }
+  ]
+}
+
