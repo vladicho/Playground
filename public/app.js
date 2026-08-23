@@ -15,6 +15,14 @@ const catalogIndexed = document.querySelector("#catalog-indexed");
 const catalogCount = document.querySelector("#catalog-count");
 const catalogResults = document.querySelector("#catalog-results");
 const catalogMore = document.querySelector("#catalog-more");
+const queueCount = document.querySelector("#queue-count");
+const queueToggle = document.querySelector("#queue-toggle");
+const queueBody = document.querySelector("#queue-body");
+const queueList = document.querySelector("#queue-list");
+const queueRemote = document.querySelector("#queue-remote");
+const queueCopy = document.querySelector("#queue-copy");
+const queueClear = document.querySelector("#queue-clear");
+const queueFeedback = document.querySelector("#queue-feedback");
 
 const MODES = {
   ask: {
@@ -66,6 +74,109 @@ const state = {
 let activeSpeech = null;
 let catalogBooks = null;
 let catalogVisible = 36;
+const QUEUE_LIMIT = 10;
+const QUEUE_STORAGE_KEY = "playground-index-queue-v1";
+const REMOTE_STORAGE_KEY = "playground-rclone-remote-v1";
+
+function loadSavedQueue() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(QUEUE_STORAGE_KEY) || "[]");
+    return new Set(
+      Array.isArray(saved)
+        ? saved.filter((item) => typeof item === "string").slice(0, QUEUE_LIMIT)
+        : [],
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+const catalogQueue = loadSavedQueue();
+
+function saveQueue() {
+  window.localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify([...catalogQueue]));
+}
+
+function shellQuote(value) {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
+function validatedRemote() {
+  const value = queueRemote.value.trim().replace(/\/+$/, "");
+  return /^[A-Za-z0-9._-]+:[^\s"'`]+$/.test(value) ? value : null;
+}
+
+async function copyPlainText(value) {
+  try {
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    const fallback = document.createElement("textarea");
+    fallback.value = value;
+    fallback.setAttribute("readonly", "");
+    fallback.style.position = "fixed";
+    fallback.style.opacity = "0";
+    document.body.append(fallback);
+    fallback.select();
+    const copied = document.execCommand("copy");
+    fallback.remove();
+    return copied;
+  }
+}
+
+function renderQueue() {
+  queueCount.textContent = `${catalogQueue.size}/${QUEUE_LIMIT}`;
+  queueList.replaceChildren();
+  const selected = catalogBooks
+    ? catalogBooks.filter((book) => catalogQueue.has(book.filename) && !book.indexed)
+    : [...catalogQueue].map((filename) => ({ filename, title: filename.replace(/\.pdf$/i, "") }));
+
+  if (selected.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "queue-empty";
+    empty.textContent = "Nenhum livro na fila.";
+    queueList.append(empty);
+  }
+
+  for (const book of selected) {
+    const item = document.createElement("li");
+    const title = document.createElement("span");
+    title.textContent = book.title;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Remover";
+    remove.addEventListener("click", () => {
+      catalogQueue.delete(book.filename);
+      saveQueue();
+      queueFeedback.textContent = "";
+      renderQueue();
+      renderCatalog();
+    });
+    item.append(title, remove);
+    queueList.append(item);
+  }
+
+  queueCopy.disabled = selected.length === 0;
+  queueClear.disabled = selected.length === 0;
+}
+
+function toggleQueuedBook(book) {
+  if (book.indexed) return;
+  queueFeedback.textContent = "";
+  if (catalogQueue.has(book.filename)) {
+    catalogQueue.delete(book.filename);
+  } else if (catalogQueue.size < QUEUE_LIMIT) {
+    catalogQueue.add(book.filename);
+  } else {
+    queueFeedback.textContent = "A fila aceita no máximo 10 livros por lote.";
+    queueBody.hidden = false;
+    queueToggle.textContent = "Fechar fila";
+    queueToggle.setAttribute("aria-expanded", "true");
+  }
+  saveQueue();
+  renderQueue();
+  renderCatalog();
+}
 
 function normalizeSearch(value) {
   return value
@@ -114,16 +225,18 @@ function renderCatalog() {
   for (const book of visible) {
     const card = document.createElement("article");
     card.className = "catalog-card";
+    card.classList.toggle("indexed", book.indexed);
+    card.classList.toggle("queued", catalogQueue.has(book.filename));
 
     const meta = document.createElement("div");
     meta.className = "catalog-card-meta";
     const category = document.createElement("span");
     category.textContent = book.category;
     meta.append(category);
-    if (book.indexed) {
-      const indexed = document.createElement("strong");
-      indexed.textContent = "Indexado";
-      meta.append(indexed);
+    if (book.indexed || catalogQueue.has(book.filename)) {
+      const status = document.createElement("strong");
+      status.textContent = book.indexed ? "Indexado" : "Na fila";
+      meta.append(status);
     }
 
     const title = document.createElement("h3");
@@ -132,9 +245,15 @@ function renderCatalog() {
 
     const action = document.createElement("button");
     action.type = "button";
-    action.disabled = !book.indexed;
-    action.textContent = book.indexed ? "Perguntar sobre este livro" : "Ainda não indexado";
-    if (book.indexed) action.addEventListener("click", () => selectCatalogBook(book));
+    if (book.indexed) {
+      action.textContent = "Perguntar sobre este livro";
+      action.addEventListener("click", () => selectCatalogBook(book));
+    } else {
+      const queued = catalogQueue.has(book.filename);
+      action.textContent = queued ? "Remover da fila" : "Adicionar à fila";
+      action.disabled = !queued && catalogQueue.size >= QUEUE_LIMIT;
+      action.addEventListener("click", () => toggleQueuedBook(book));
+    }
 
     card.append(meta, title, action);
     catalogResults.append(card);
@@ -155,6 +274,14 @@ async function loadCatalog() {
     const data = await response.json();
     if (!Array.isArray(data.books)) throw new Error();
     catalogBooks = data.books;
+    const queueable = new Set(
+      catalogBooks.filter((book) => !book.indexed).map((book) => book.filename),
+    );
+    for (const filename of catalogQueue) {
+      if (!queueable.has(filename)) catalogQueue.delete(filename);
+    }
+    saveQueue();
+    renderQueue();
     renderCatalog();
   } catch {
     catalogCount.textContent = "Não foi possível carregar o catálogo.";
@@ -768,4 +895,47 @@ catalogMore.addEventListener("click", () => {
   renderCatalog();
 });
 
+queueToggle.addEventListener("click", () => {
+  const willOpen = queueBody.hidden;
+  queueBody.hidden = !willOpen;
+  queueToggle.textContent = willOpen ? "Fechar fila" : "Abrir fila";
+  queueToggle.setAttribute("aria-expanded", String(willOpen));
+});
+
+queueRemote.value = window.localStorage.getItem(REMOTE_STORAGE_KEY) || "";
+queueRemote.addEventListener("input", () => {
+  window.localStorage.setItem(REMOTE_STORAGE_KEY, queueRemote.value.trim());
+  queueFeedback.textContent = "";
+});
+
+queueClear.addEventListener("click", () => {
+  catalogQueue.clear();
+  saveQueue();
+  queueFeedback.textContent = "Fila limpa.";
+  renderQueue();
+  renderCatalog();
+});
+
+queueCopy.addEventListener("click", async () => {
+  const remote = validatedRemote();
+  if (!remote) {
+    queueFeedback.textContent = "Informe o destino como remote:nome-do-bucket.";
+    queueRemote.focus();
+    return;
+  }
+  const filenames = catalogBooks
+    ? catalogBooks.filter((book) => catalogQueue.has(book.filename) && !book.indexed).map((book) => book.filename)
+    : [...catalogQueue];
+  const commands = filenames.map((filename) => {
+    const source = `${remote}/livros/${filename}`;
+    const destination = `${remote}/rag-teste/${filename}`;
+    return `rclone copyto ${shellQuote(source)} ${shellQuote(destination)} --progress`;
+  });
+  const copied = await copyPlainText(commands.join("\n"));
+  queueFeedback.textContent = copied
+    ? `${commands.length} comando(s) copiado(s). Execute no Termux e depois reindexe o AI Search.`
+    : "Não foi possível copiar automaticamente. Tente novamente pelo navegador.";
+});
+
+renderQueue();
 resizeInput();
