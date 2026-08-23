@@ -21,6 +21,7 @@
         </a>
         <div class="topbar-actions">
           <span class="status"><i></i> Base conectada</span>
+          <button id="catalog-open" class="ghost-button catalog-button" type="button">Catálogo</button>
           <button id="clear-chat" class="ghost-button" type="button">Limpar</button>
         </div>
       </header>
@@ -86,6 +87,50 @@
         <p class="composer-note">A IA pode errar. Confira os cálculos e as fontes.</p>
       </footer>
     </div>
+
+    <dialog id="catalog-dialog" class="catalog-dialog" aria-labelledby="catalog-title">
+      <section class="catalog-shell">
+        <header class="catalog-header">
+          <div>
+            <p class="eyebrow">Acervo matemático</p>
+            <h2 id="catalog-title">Catálogo de livros</h2>
+            <p>Os títulos são públicos; os arquivos continuam privados. A classificação é estimada pelo nome.</p>
+          </div>
+          <button id="catalog-close" class="catalog-close" type="button" aria-label="Fechar catálogo">×</button>
+        </header>
+
+        <div class="catalog-filters">
+          <label class="catalog-search">
+            <span class="sr-only">Buscar no catálogo</span>
+            <input id="catalog-query" type="search" placeholder="Título, autor ou assunto…" autocomplete="off" />
+          </label>
+          <label>
+            <span class="sr-only">Filtrar por categoria</span>
+            <select id="catalog-category">
+              <option value="">Todas as categorias</option>
+              <option>Aritmética</option>
+              <option>Álgebra</option>
+              <option>Geometria e trigonometria</option>
+              <option>Cálculo e análise</option>
+              <option>Matemática discreta</option>
+              <option>Estatística e probabilidade</option>
+              <option>Matemática geral</option>
+            </select>
+          </label>
+          <label class="catalog-indexed-filter">
+            <input id="catalog-indexed" type="checkbox" />
+            <span>Somente indexados</span>
+          </label>
+        </div>
+
+        <div class="catalog-summary">
+          <strong id="catalog-count">Carregando catálogo…</strong>
+          <small><i></i> Indexado = disponível para perguntas no RAG</small>
+        </div>
+        <div id="catalog-results" class="catalog-results" aria-live="polite"></div>
+        <button id="catalog-more" class="catalog-more" type="button" hidden>Mostrar mais</button>
+      </section>
+    </dialog>
     <script type="module" src="/app.js"></script>
   </body>
 </html>
