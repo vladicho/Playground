@@ -1,3 +1,6 @@
 interface Env {
   AI_SEARCH: AiSearchInstance;
+  DB?: D1Database;
+  DAILY_USER_LIMIT?: string;
+  DAILY_GLOBAL_LIMIT?: string;
 }
