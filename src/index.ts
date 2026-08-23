@@ -128,6 +128,7 @@ async function reserveUsage(
   env: Env,
 ): Promise<UsageReservation | null> {
   if (!env.DB) return null;
+  await ensureUsageSchema(env.DB);
 
   const identity = await identifyRequest(request);
   const usageDate = utcDateKey();
@@ -237,6 +238,75 @@ function usageHeaders(reservation: UsageReservation | null): HeadersInit {
     );
   }
   return headers;
+}
+
+let usageSchemaReady: Promise<void> | null = null;
+
+async function ensureUsageSchema(db: D1Database): Promise<void> {
+  if (!usageSchemaReady) {
+    usageSchemaReady = (async () => {
+      const existing = await db
+        .prepare(
+          `SELECT COUNT(*) AS table_count
+           FROM sqlite_master
+           WHERE type = 'table'
+             AND name IN ('users', 'daily_usage', 'global_daily_usage')`,
+        )
+        .first<{ table_count: number }>();
+      if (Number(existing?.table_count ?? 0) === 3) return;
+
+      await db.batch([
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS users (
+             id TEXT PRIMARY KEY,
+             email TEXT UNIQUE,
+             auth_provider TEXT NOT NULL,
+             external_subject TEXT,
+             status TEXT NOT NULL DEFAULT 'active'
+               CHECK (status IN ('active', 'blocked')),
+             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+             last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+           )`,
+        ),
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS daily_usage (
+             user_id TEXT NOT NULL,
+             usage_date TEXT NOT NULL,
+             request_count INTEGER NOT NULL DEFAULT 0 CHECK (request_count >= 0),
+             success_count INTEGER NOT NULL DEFAULT 0 CHECK (success_count >= 0),
+             error_count INTEGER NOT NULL DEFAULT 0 CHECK (error_count >= 0),
+             last_request_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+             PRIMARY KEY (user_id, usage_date),
+             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+           )`,
+        ),
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS global_daily_usage (
+             usage_date TEXT PRIMARY KEY,
+             request_count INTEGER NOT NULL DEFAULT 0 CHECK (request_count >= 0),
+             success_count INTEGER NOT NULL DEFAULT 0 CHECK (success_count >= 0),
+             error_count INTEGER NOT NULL DEFAULT 0 CHECK (error_count >= 0),
+             last_request_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+           )`,
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS users_last_seen_idx ON users(last_seen_at DESC)",
+        ),
+        db.prepare(
+          `CREATE INDEX IF NOT EXISTS users_provider_subject_idx
+           ON users(auth_provider, external_subject)`,
+        ),
+        db.prepare(
+          `CREATE INDEX IF NOT EXISTS daily_usage_date_idx
+           ON daily_usage(usage_date, request_count DESC)`,
+        ),
+      ]);
+    })().catch((error) => {
+      usageSchemaReady = null;
+      throw error;
+    });
+  }
+  await usageSchemaReady;
 }
 
 export default {
