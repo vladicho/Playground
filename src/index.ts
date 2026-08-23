@@ -99,17 +99,6 @@ export default {
           ...body.messages,
         ],
         stream: true,
-        ai_search_options: {
-          retrieval: {
-            retrieval_type: "vector",
-            match_threshold: 0.2,
-            max_num_results: 5,
-            context_expansion: 1,
-          },
-          query_rewrite: { enabled: false },
-          reranking: { enabled: false },
-          cache: { enabled: false },
-        },
       });
 
       console.log(
@@ -128,10 +117,20 @@ export default {
         },
       });
     } catch (error) {
+      const details =
+        error instanceof Error
+          ? Object.fromEntries(
+              Object.getOwnPropertyNames(error).map((key) => [
+                key,
+                String((error as unknown as Record<string, unknown>)[key]),
+              ]),
+            )
+          : { value: String(error) };
+
       console.error(
         JSON.stringify({
           message: "AI Search request failed",
-          error: error instanceof Error ? error.message : String(error),
+          error: details,
           path: url.pathname,
         }),
       );
