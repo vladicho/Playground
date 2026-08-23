@@ -299,7 +299,7 @@ h1 span { color: var(--accent); }
   background: #152d23;
 }
 .mindmap-toolbar strong { color: var(--accent); font-size: .78rem; }
-.mindmap-toolbar div { display: flex; gap: .35rem; }
+.mindmap-toolbar div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .35rem; }
 .mindmap-toolbar button {
   min-width: 2rem;
   padding: .4rem .55rem;
@@ -311,6 +311,7 @@ h1 span { color: var(--accent); }
   cursor: pointer;
 }
 .mindmap-toolbar button:hover { border-color: rgba(242, 203, 105, .5); }
+.mindmap-toolbar button:disabled { opacity: .45; cursor: wait; }
 .mindmap-viewport {
   max-height: min(62vh, 680px);
   overflow: auto;
