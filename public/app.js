@@ -23,6 +23,16 @@ const queueRemote = document.querySelector("#queue-remote");
 const queueCopy = document.querySelector("#queue-copy");
 const queueClear = document.querySelector("#queue-clear");
 const queueFeedback = document.querySelector("#queue-feedback");
+const notebookDialog = document.querySelector("#notebook-dialog");
+const notebookOpen = document.querySelector("#notebook-open");
+const notebookClose = document.querySelector("#notebook-close");
+const notebookQuery = document.querySelector("#notebook-query");
+const notebookMode = document.querySelector("#notebook-mode");
+const notebookStatus = document.querySelector("#notebook-status");
+const notebookCount = document.querySelector("#notebook-count");
+const notebookProgress = document.querySelector("#notebook-progress");
+const notebookResults = document.querySelector("#notebook-results");
+const notebookPrint = document.querySelector("#notebook-print");
 
 const MODES = {
   ask: {
@@ -77,6 +87,37 @@ let catalogVisible = 36;
 const QUEUE_LIMIT = 10;
 const QUEUE_STORAGE_KEY = "playground-index-queue-v1";
 const REMOTE_STORAGE_KEY = "playground-rclone-remote-v1";
+const NOTEBOOK_STORAGE_KEY = "playground-study-notebook-v1";
+const NOTEBOOK_LIMIT = 150;
+
+function loadNotebook() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(NOTEBOOK_STORAGE_KEY) || "[]");
+    if (!Array.isArray(saved)) return [];
+    return saved
+      .filter(
+        (entry) =>
+          entry &&
+          typeof entry.id === "string" &&
+          typeof entry.title === "string" &&
+          typeof entry.answer === "string",
+      )
+      .slice(0, NOTEBOOK_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
+let notebookEntries = loadNotebook();
+
+function persistNotebook() {
+  try {
+    window.localStorage.setItem(NOTEBOOK_STORAGE_KEY, JSON.stringify(notebookEntries));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function loadSavedQueue() {
   try {
@@ -176,6 +217,238 @@ function toggleQueuedBook(book) {
   saveQueue();
   renderQueue();
   renderCatalog();
+}
+
+function newNotebookId() {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function filteredNotebookEntries() {
+  const query = normalizeSearch(notebookQuery.value);
+  const mode = notebookMode.value;
+  const status = notebookStatus.value;
+  return notebookEntries.filter((entry) => {
+    if (mode && entry.mode !== mode) return false;
+    if (status === "reviewed" && !entry.reviewed) return false;
+    if (status === "pending" && entry.reviewed) return false;
+    if (!query) return true;
+    const searchable = [
+      entry.title,
+      entry.answer,
+      entry.notes || "",
+      ...(Array.isArray(entry.sources) ? entry.sources.map((source) => source.name || "") : []),
+    ].join(" ");
+    return normalizeSearch(searchable).includes(query);
+  });
+}
+
+function saveMaterialToNotebook(material, button) {
+  if (notebookEntries.length >= NOTEBOOK_LIMIT) {
+    button.textContent = "Caderno cheio";
+    return;
+  }
+  const entry = {
+    id: newNotebookId(),
+    title: material.title,
+    mode: material.mode,
+    answer: material.answer,
+    sources: material.sources,
+    notes: "",
+    reviewed: false,
+    createdAt: new Date().toISOString(),
+  };
+  notebookEntries.unshift(entry);
+  if (!persistNotebook()) {
+    notebookEntries.shift();
+    button.textContent = "Sem espaço local";
+    return;
+  }
+  button.textContent = "Salvo no caderno";
+  button.disabled = true;
+  button.closest(".message")?.setAttribute("data-notebook-id", entry.id);
+  renderNotebook();
+}
+
+function formatNotebookDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data não disponível";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function appendNotebookSources(target, sources) {
+  if (!Array.isArray(sources) || sources.length === 0) return;
+  const section = document.createElement("section");
+  section.className = "notebook-sources";
+  const heading = document.createElement("strong");
+  heading.textContent = "Fontes salvas";
+  const list = document.createElement("ul");
+  for (const source of sources) {
+    const item = document.createElement("li");
+    const score = typeof source.score === "number" ? ` · ${(source.score * 100).toFixed(1).replace(".", ",")}%` : "";
+    const page = source.page ? ` · p. ${source.page}` : "";
+    item.textContent = `${source.name || "Fonte"}${page}${score}`;
+    list.append(item);
+  }
+  section.append(heading, list);
+  target.append(section);
+}
+
+function renderNotebookBody(body, entry) {
+  if (body.dataset.rendered === "true") return;
+  body.dataset.rendered = "true";
+
+  const answer = document.createElement("div");
+  answer.className = "notebook-answer";
+  answer.textContent = entry.answer;
+  renderMathIn(answer);
+  body.append(answer);
+  if (entry.mode === "mindmap") renderMindMap(body, entry.answer, entry.title);
+  appendNotebookSources(body, entry.sources);
+
+  const noteLabel = document.createElement("label");
+  noteLabel.className = "notebook-notes";
+  const noteTitle = document.createElement("span");
+  noteTitle.textContent = "Minhas anotações";
+  const notes = document.createElement("textarea");
+  notes.rows = 4;
+  notes.maxLength = 4_000;
+  notes.placeholder = "Escreva sua anotação…";
+  notes.value = entry.notes || "";
+  notes.addEventListener("change", () => {
+    entry.notes = notes.value.trim();
+    persistNotebook();
+  });
+  noteLabel.append(noteTitle, notes);
+  body.append(noteLabel);
+}
+
+function renderNotebook() {
+  const matches = filteredNotebookEntries();
+  const reviewed = notebookEntries.filter((entry) => entry.reviewed).length;
+  notebookCount.textContent = `${matches.length} ${matches.length === 1 ? "material exibido" : "materiais exibidos"}`;
+  notebookProgress.textContent = `${reviewed}/${notebookEntries.length} revisados`;
+  notebookPrint.disabled = matches.length === 0;
+  notebookResults.replaceChildren();
+
+  if (matches.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "notebook-empty";
+    empty.textContent = notebookEntries.length
+      ? "Nenhum material corresponde aos filtros."
+      : "Salve uma resposta da biblioteca para começar seu caderno.";
+    notebookResults.append(empty);
+    return;
+  }
+
+  for (const entry of matches) {
+    const card = document.createElement("article");
+    card.className = "notebook-card";
+    card.classList.toggle("reviewed", Boolean(entry.reviewed));
+
+    const header = document.createElement("header");
+    const heading = document.createElement("div");
+    const meta = document.createElement("p");
+    meta.textContent = `${MODE_LABELS[entry.mode] || MODE_LABELS.ask} · ${formatNotebookDate(entry.createdAt)}`;
+    const title = document.createElement("h3");
+    title.textContent = entry.title;
+    heading.append(meta, title);
+
+    const controls = document.createElement("div");
+    controls.className = "notebook-card-controls";
+    const open = document.createElement("button");
+    open.type = "button";
+    open.textContent = "Abrir";
+    const review = document.createElement("button");
+    review.type = "button";
+    review.textContent = entry.reviewed ? "Revisado ✓" : "Marcar revisado";
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Excluir";
+    controls.append(open, review, remove);
+    header.append(heading, controls);
+
+    const body = document.createElement("div");
+    body.className = "notebook-card-body";
+    body.hidden = true;
+    open.addEventListener("click", () => {
+      body.hidden = !body.hidden;
+      open.textContent = body.hidden ? "Abrir" : "Fechar";
+      if (!body.hidden) renderNotebookBody(body, entry);
+    });
+    review.addEventListener("click", () => {
+      entry.reviewed = !entry.reviewed;
+      persistNotebook();
+      renderNotebook();
+    });
+    remove.addEventListener("click", () => {
+      if (!window.confirm(`Excluir "${entry.title}" do caderno?`)) return;
+      notebookEntries = notebookEntries.filter((candidate) => candidate.id !== entry.id);
+      persistNotebook();
+      renderNotebook();
+    });
+
+    card.append(header, body);
+    notebookResults.append(card);
+  }
+}
+
+function printNotebook() {
+  const entries = filteredNotebookEntries();
+  if (entries.length === 0) return;
+  const sheet = document.createElement("section");
+  sheet.className = "notebook-print-sheet";
+  const heading = document.createElement("header");
+  const brand = document.createElement("p");
+  brand.textContent = "Biblioteca Matemática";
+  const title = document.createElement("h1");
+  title.textContent = "Caderno de estudos";
+  const metadata = document.createElement("p");
+  metadata.textContent = `${entries.length} materiais · ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date())}`;
+  heading.append(brand, title, metadata);
+  sheet.append(heading);
+
+  for (const entry of entries) {
+    const material = document.createElement("article");
+    const materialTitle = document.createElement("h2");
+    materialTitle.textContent = entry.title;
+    const materialMeta = document.createElement("p");
+    materialMeta.className = "notebook-print-meta";
+    materialMeta.textContent = `${MODE_LABELS[entry.mode] || MODE_LABELS.ask} · ${formatNotebookDate(entry.createdAt)}${entry.reviewed ? " · Revisado" : ""}`;
+    const answer = document.createElement("div");
+    answer.className = "notebook-print-answer";
+    answer.textContent = entry.answer;
+    renderMathIn(answer);
+    material.append(materialTitle, materialMeta, answer);
+    appendNotebookSources(material, entry.sources);
+    if (entry.notes) {
+      const notes = document.createElement("section");
+      notes.className = "notebook-print-notes";
+      const noteTitle = document.createElement("strong");
+      noteTitle.textContent = "Minhas anotações";
+      const note = document.createElement("p");
+      note.textContent = entry.notes;
+      notes.append(noteTitle, note);
+      material.append(notes);
+    }
+    sheet.append(material);
+  }
+
+  document.body.append(sheet);
+  document.body.classList.add("notebook-printing");
+  const previousTitle = document.title;
+  document.title = "Caderno de estudos - Biblioteca Matemática";
+  const cleanup = () => {
+    sheet.remove();
+    document.body.classList.remove("notebook-printing");
+    document.title = previousTitle;
+  };
+  window.addEventListener("afterprint", cleanup, { once: true });
+  window.addEventListener("focus", cleanup, { once: true });
+  window.print();
 }
 
 function normalizeSearch(value) {
@@ -347,7 +620,7 @@ function cleanExcerpt(text) {
   return clean.length > 360 ? `${clean.slice(0, 357)}…` : clean;
 }
 
-function renderSources(article, chunks) {
+function collectSources(chunks) {
   const unique = new Map();
   for (const chunk of chunks) {
     const key = chunk?.item?.key;
@@ -362,7 +635,12 @@ function renderSources(article, chunks) {
       });
     }
   }
-  if (unique.size === 0) return;
+  return [...unique].map(([key, details]) => ({ key, name: cleanSourceName(key), ...details }));
+}
+
+function renderSources(article, chunks) {
+  const unique = collectSources(chunks);
+  if (unique.length === 0) return;
 
   const sources = document.createElement("section");
   sources.className = "sources";
@@ -371,18 +649,18 @@ function renderSources(article, chunks) {
   const heading = document.createElement("div");
   heading.className = "sources-heading";
   const title = document.createElement("strong");
-  title.textContent = `Fontes recuperadas (${unique.size})`;
+  title.textContent = `Fontes recuperadas (${unique.length})`;
   const note = document.createElement("small");
   note.textContent = "Similaridade indica recuperação, não garante que toda a resposta esteja na fonte.";
   heading.append(title, note);
   sources.append(heading);
 
-  for (const [key, details] of unique) {
+  for (const details of unique) {
     const source = document.createElement("details");
     source.className = "source-card";
     const summary = document.createElement("summary");
     const name = document.createElement("b");
-    name.textContent = cleanSourceName(key);
+    name.textContent = details.name;
     summary.append(name);
     if (details.page !== null) {
       const page = document.createElement("span");
@@ -696,7 +974,7 @@ function renderMindMap(article, text, fallbackTitle) {
   preparePng();
 }
 
-function renderExportControls(article, title, mode) {
+function renderExportControls(article, title, mode, material) {
   const printHeader = document.createElement("header");
   printHeader.className = "print-header";
   const brand = document.createElement("p");
@@ -714,6 +992,10 @@ function renderExportControls(article, title, mode) {
 
   const controls = document.createElement("div");
   controls.className = "export-controls";
+  const save = document.createElement("button");
+  save.type = "button";
+  save.textContent = "Salvar no caderno";
+  save.addEventListener("click", () => saveMaterialToNotebook(material, save));
   const button = document.createElement("button");
   button.type = "button";
   button.textContent = "Imprimir / Salvar PDF";
@@ -732,7 +1014,7 @@ function renderExportControls(article, title, mode) {
     window.addEventListener("focus", cleanup, { once: true });
     window.print();
   });
-  controls.append(button);
+  controls.append(save, button);
   article.append(controls);
 }
 
@@ -826,7 +1108,12 @@ async function ask(question, displayQuestion = question, mode = "ask") {
     if (mode === "podcast") renderAudioControls(assistant.article, answer);
     if (mode === "mindmap") renderMindMap(assistant.article, answer, displayQuestion);
     renderSources(assistant.article, sources);
-    renderExportControls(assistant.article, displayQuestion, mode);
+    renderExportControls(assistant.article, displayQuestion, mode, {
+      title: displayQuestion,
+      mode,
+      answer,
+      sources: collectSources(sources).map(({ name, page, score }) => ({ name, page, score })),
+    });
   } catch (error) {
     assistant.article.classList.add("error");
     assistant.content.textContent = error instanceof Error ? error.message : "Ocorreu um erro inesperado.";
@@ -937,5 +1224,20 @@ queueCopy.addEventListener("click", async () => {
     : "Não foi possível copiar automaticamente. Tente novamente pelo navegador.";
 });
 
+notebookOpen.addEventListener("click", () => {
+  renderNotebook();
+  notebookDialog.showModal();
+  window.requestAnimationFrame(() => notebookQuery.focus());
+});
+notebookClose.addEventListener("click", () => notebookDialog.close());
+notebookDialog.addEventListener("click", (event) => {
+  if (event.target === notebookDialog) notebookDialog.close();
+});
+for (const control of [notebookQuery, notebookMode, notebookStatus]) {
+  control.addEventListener("input", renderNotebook);
+}
+notebookPrint.addEventListener("click", printNotebook);
+
 renderQueue();
+renderNotebook();
 resizeInput();
