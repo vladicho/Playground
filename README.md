@@ -16,6 +16,8 @@ Cloudflare AI Search.
 - Fontes recuperadas com similaridade e trechos expansíveis.
 - Catálogo pesquisável com 256 títulos únicos, categorias estimadas e destaque
   para os cinco documentos atualmente indexados no RAG.
+- Fila local de até 10 livros, persistida no navegador, com geração segura dos
+  comandos `rclone copyto` para preparar o próximo lote em `rag-teste`.
 - Nenhum token ou credencial é enviado ao navegador.
 - O domínio deve ser protegido pelo Cloudflare Access antes de ser liberado.
 
