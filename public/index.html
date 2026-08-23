@@ -22,6 +22,7 @@
         <div class="topbar-actions">
           <span class="status"><i></i> Base conectada</span>
           <button id="catalog-open" class="ghost-button catalog-button" type="button">Catálogo</button>
+          <button id="notebook-open" class="ghost-button" type="button">Caderno</button>
           <button id="clear-chat" class="ghost-button" type="button">Limpar</button>
         </div>
       </header>
@@ -155,6 +156,56 @@
         </section>
         <div id="catalog-results" class="catalog-results" aria-live="polite"></div>
         <button id="catalog-more" class="catalog-more" type="button" hidden>Mostrar mais</button>
+      </section>
+    </dialog>
+
+    <dialog id="notebook-dialog" class="catalog-dialog notebook-dialog" aria-labelledby="notebook-title">
+      <section class="catalog-shell notebook-shell">
+        <header class="catalog-header">
+          <div>
+            <p class="eyebrow">Materiais salvos</p>
+            <h2 id="notebook-title">Caderno de estudos</h2>
+            <p>Respostas, anotações e revisões ficam somente neste navegador.</p>
+          </div>
+          <button id="notebook-close" class="catalog-close" type="button" aria-label="Fechar caderno">×</button>
+        </header>
+
+        <div class="notebook-filters">
+          <label>
+            <span class="sr-only">Pesquisar materiais salvos</span>
+            <input id="notebook-query" type="search" placeholder="Pesquisar no caderno…" autocomplete="off" />
+          </label>
+          <label>
+            <span class="sr-only">Filtrar por tipo de material</span>
+            <select id="notebook-mode">
+              <option value="">Todos os materiais</option>
+              <option value="ask">Respostas</option>
+              <option value="summary">Resumos</option>
+              <option value="quiz">Quizzes</option>
+              <option value="flashcards">Flashcards</option>
+              <option value="mindmap">Mapas mentais</option>
+              <option value="podcast">Roteiros de podcast</option>
+            </select>
+          </label>
+          <label>
+            <span class="sr-only">Filtrar por revisão</span>
+            <select id="notebook-status">
+              <option value="">Todos os estados</option>
+              <option value="pending">Para revisar</option>
+              <option value="reviewed">Revisados</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="notebook-summary">
+          <strong id="notebook-count">Nenhum material salvo</strong>
+          <small id="notebook-progress">0 revisados</small>
+        </div>
+        <div id="notebook-results" class="notebook-results" aria-live="polite"></div>
+        <footer class="notebook-footer">
+          <small>Use “Imprimir caderno” e escolha “Salvar como PDF”.</small>
+          <button id="notebook-print" type="button" disabled>Imprimir caderno</button>
+        </footer>
       </section>
     </dialog>
     <script type="module" src="/app.js"></script>
