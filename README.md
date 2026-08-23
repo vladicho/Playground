@@ -8,6 +8,8 @@ Cloudflare AI Search.
 - Cloudflare Worker com binding direto ao AI Search.
 - Static Assets para a interface web.
 - Respostas transmitidas por Server-Sent Events.
+- Modos de estudo: resumo, quiz, flashcards, mapa mental e roteiro de podcast.
+- Fontes recuperadas com similaridade e trechos expansíveis.
 - Nenhum token ou credencial é enviado ao navegador.
 - O domínio deve ser protegido pelo Cloudflare Access antes de ser liberado.
 
@@ -19,8 +21,9 @@ npm run check
 npm run dev
 ```
 
-O AI Search é um binding remoto. O desenvolvimento local utiliza a instância
-real da conta Cloudflare.
+Para testar o AI Search localmente, habilite `remote: true` apenas na
+configuração local do binding. A configuração de produção permanece sem esse
+campo.
 
 ## Implantação
 
