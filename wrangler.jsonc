@@ -12,8 +12,7 @@
   "ai_search": [
     {
       "binding": "AI_SEARCH",
-      "instance_name": "biblioteca-matematica",
-      "remote": true
+      "instance_name": "biblioteca-matematica"
     }
   ],
   "observability": {
