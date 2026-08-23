@@ -268,6 +268,22 @@ h1 span { color: var(--accent); }
   opacity: .7;
 }
 .math-copy:hover { border-color: rgba(242, 203, 105, .5); opacity: 1; }
+.print-header { display: none; }
+.export-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: .4rem;
+}
+.export-controls button {
+  padding: .55rem .72rem;
+  border: 1px solid rgba(242, 203, 105, .28);
+  border-radius: .7rem;
+  color: var(--accent);
+  background: rgba(242, 203, 105, .07);
+  font-size: .72rem;
+  cursor: pointer;
+}
+.export-controls button:hover { background: rgba(242, 203, 105, .14); }
 
 .typing::after {
   content: "";
@@ -464,4 +480,82 @@ h1 span { color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+@page { size: A4; margin: 14mm; }
+
+@media print {
+  :root { color-scheme: light; }
+  body.printing {
+    min-width: 0;
+    color: #172019;
+    background: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  body.printing .app-shell { display: block; width: 100%; min-height: 0; }
+  body.printing .topbar,
+  body.printing .composer-wrap,
+  body.printing .message:not(.print-target),
+  body.printing .message-label,
+  body.printing .export-controls,
+  body.printing .audio-controls,
+  body.printing .math-copy,
+  body.printing .mindmap-toolbar { display: none !important; }
+  body.printing .conversation { padding: 0; overflow: visible; }
+  body.printing .message-list { display: block; max-width: none; margin: 0; }
+  body.printing .message.print-target { display: block; color: #172019; }
+  body.printing .print-header {
+    display: block;
+    margin-bottom: 10mm;
+    padding-bottom: 5mm;
+    border-bottom: 2px solid #c9a94f;
+  }
+  body.printing .print-header p { margin: 0; color: #59655e; font-size: 9pt; }
+  body.printing .print-header p:first-child {
+    margin-bottom: 3mm;
+    color: #8b6d18;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  body.printing .print-header h1 {
+    margin: 0 0 2mm;
+    color: #172019;
+    font-size: 22pt;
+    line-height: 1.15;
+    letter-spacing: -.02em;
+  }
+  body.printing .message-content {
+    padding: 0;
+    border: 0;
+    color: #172019;
+    background: transparent;
+    font-size: 11pt;
+    line-height: 1.55;
+  }
+  body.printing .math-expression { color: #111; }
+  body.printing .math-display {
+    border-color: #d9dedb;
+    color: #111;
+    background: #f7f8f7;
+    break-inside: avoid;
+  }
+  body.printing .mindmap-panel {
+    margin-block: 7mm;
+    border-color: #bac4be;
+    break-inside: avoid;
+  }
+  body.printing .mindmap-viewport { max-height: none; overflow: visible; }
+  body.printing .mindmap-svg { width: 100% !important; height: auto !important; }
+  body.printing .sources { margin-top: 9mm; color: #172019; }
+  body.printing .sources-heading strong { color: #745b17; }
+  body.printing .sources-heading small { color: #59655e; }
+  body.printing .source-card {
+    border-color: #d7c995;
+    color: #5d4a14;
+    background: #fffdf6;
+    break-inside: avoid;
+  }
+  body.printing .source-card > p { display: block !important; color: #303a34; }
 }
