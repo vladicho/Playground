@@ -43,6 +43,8 @@ const state = {
   mode: "ask",
 };
 
+let activeSpeech = null;
+
 function resizeInput() {
   input.style.height = "auto";
   input.style.height = `${Math.min(input.scrollHeight, 160)}px`;
@@ -159,6 +161,56 @@ function renderSources(article, chunks) {
   article.append(sources);
 }
 
+function renderAudioControls(article, text) {
+  if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
+
+  const controls = document.createElement("div");
+  controls.className = "audio-controls";
+  const play = document.createElement("button");
+  play.type = "button";
+  play.textContent = "▶ Ouvir roteiro";
+  const stop = document.createElement("button");
+  stop.type = "button";
+  stop.textContent = "■ Parar";
+  stop.disabled = true;
+
+  const reset = () => {
+    play.disabled = false;
+    stop.disabled = true;
+    if (activeSpeech?.controls === controls) activeSpeech = null;
+  };
+
+  play.addEventListener("click", () => {
+    window.speechSynthesis.cancel();
+    const spokenText = text
+      .replace(/[*_#`]/g, "")
+      .replace(/\n+/g, ". ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const utterance = new SpeechSynthesisUtterance(spokenText);
+    utterance.lang = "pt-BR";
+    utterance.rate = 1;
+    const voice = window.speechSynthesis
+      .getVoices()
+      .find((candidate) => candidate.lang.toLowerCase().startsWith("pt-br"));
+    if (voice) utterance.voice = voice;
+    utterance.addEventListener("end", reset, { once: true });
+    utterance.addEventListener("error", reset, { once: true });
+    activeSpeech = { utterance, controls };
+    play.disabled = true;
+    stop.disabled = false;
+    window.speechSynthesis.speak(utterance);
+  });
+
+  stop.addEventListener("click", () => {
+    window.speechSynthesis.cancel();
+    reset();
+  });
+
+  controls.append(play, stop);
+  article.append(controls);
+}
+
 function setMode(mode) {
   if (!(mode in MODES) || state.busy) return;
   state.mode = mode;
@@ -198,7 +250,7 @@ function consumeSseBlock(block, target, sources) {
   return false;
 }
 
-async function ask(question, displayQuestion = question) {
+async function ask(question, displayQuestion = question, mode = "ask") {
   if (state.busy) return;
   state.busy = true;
   sendButton.disabled = true;
@@ -245,6 +297,7 @@ async function ask(question, displayQuestion = question) {
     if (!answer) throw new Error("A biblioteca não retornou uma resposta.");
 
     state.messages.push({ role: "assistant", content: answer });
+    if (mode === "podcast") renderAudioControls(assistant.article, answer);
     renderSources(assistant.article, sources);
   } catch (error) {
     assistant.article.classList.add("error");
@@ -264,7 +317,7 @@ form.addEventListener("submit", (event) => {
   const question = MODES[state.mode].prompt(topic);
   input.value = "";
   resizeInput();
-  void ask(question, topic);
+  void ask(question, topic, state.mode);
 });
 
 input.addEventListener("input", resizeInput);
@@ -276,6 +329,7 @@ input.addEventListener("keydown", (event) => {
 });
 
 clearButton.addEventListener("click", () => {
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   state.messages.length = 0;
   window.location.reload();
 });
