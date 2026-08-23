@@ -22,6 +22,8 @@ Cloudflare AI Search.
   anotações, acompanhar revisões e imprimir o conjunto em PDF.
 - Revisão espaçada em 1, 3, 7, 14 e 30 dias, com níveis de domínio, pendências,
   sequência diária e progresso por livro e assunto.
+- Modo Simulado com cinco questões fundamentadas, cronômetro de 20 minutos,
+  correção local, nota e relatório de erros sem chamadas adicionais à IA.
 - Nenhum token ou credencial é enviado ao navegador.
 - O domínio deve ser protegido pelo Cloudflare Access antes de ser liberado.
 
