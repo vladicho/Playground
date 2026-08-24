@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "mathplayground-api",
+  "main": "src/api.ts",
+  "compatibility_date": "2026-08-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "api.lugarerrado.com",
+      "custom_domain": true
+    }
+  ],
+  "ai_search": [
+    {
+      "binding": "AI_SEARCH",
+      "instance_name": "biblioteca-matematica"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "playground-db",
+      "database_id": "bc9d29ef-63ad-4603-b08b-6013f881cc10",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "vars": {
+    "ALLOWED_ORIGINS": "https://playground.lugarerrado.com",
+    "DAILY_API_CLIENT_LIMIT": "100",
+    "DAILY_API_GLOBAL_LIMIT": "500"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.05
+    }
+  }
+}

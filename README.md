@@ -79,3 +79,35 @@ Depois da criação, adicione o `database_id` retornado ao `wrangler.jsonc`:
 
 As variáveis opcionais `DAILY_USER_LIMIT` e `DAILY_GLOBAL_LIMIT` ativam os
 limites diários. Se forem omitidas, o D1 apenas mede o uso.
+
+## MathPlayground API
+
+O mesmo repositório contém um segundo Worker, `mathplayground-api`, configurado
+em `wrangler.api.jsonc` para o domínio `api.lugarerrado.com`. Ele reutiliza o
+AI Search e o D1, sem acesso direto nem exposição do bucket R2.
+
+Rotas públicas:
+
+- `GET /` — identificação da API.
+- `GET /v1/health` — disponibilidade.
+- `GET /v1/openapi.json` — descrição OpenAPI.
+
+Rotas protegidas por `Authorization: Bearer <chave>`:
+
+- `POST /v1/chat` — conversa RAG, com opção de streaming.
+- `POST /v1/search` — recuperação de trechos e fontes.
+- `POST /v1/solve` — resolução matemática passo a passo.
+- `POST /v1/quiz` — geração de quiz em português ou espanhol.
+- `GET /v1/usage` — consumo e limites do dia.
+
+A chave nunca deve ser adicionada ao repositório. Depois do primeiro deploy,
+configure `MATHPLAYGROUND_API_KEY` como Secret no Worker `mathplayground-api`.
+Os limites iniciais são 100 solicitações por chave e 500 solicitações globais
+por dia UTC; podem ser ajustados em `wrangler.api.jsonc`.
+
+Para criar/atualizar somente a API:
+
+```bash
+npm run check:api
+npm run deploy:api
+```

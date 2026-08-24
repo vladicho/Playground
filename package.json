@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "dev:api": "wrangler dev --config wrangler.api.jsonc",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && node --check public/app.js && node --check public/i18n.js && node --check public/math.js",
-    "deploy": "wrangler deploy"
+    "check:api": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "deploy:api": "wrangler deploy --config wrangler.api.jsonc"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260822.1",
