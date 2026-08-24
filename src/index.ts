@@ -24,6 +24,11 @@ type ChatBody = {
   messages: ClientMessage[];
 };
 
+type ExactPageRequest = {
+  page: number;
+  filename: string | null;
+};
+
 type PodcastAudioBody = {
   text: string;
   language: "pt" | "es";
@@ -75,6 +80,132 @@ function parseChatBody(value: unknown): ChatBody | null {
   if (messages.at(-1)?.role !== "user") return null;
 
   return { messages };
+}
+
+function parseExactPageRequest(messages: ClientMessage[]): ExactPageRequest | null {
+  const latest = messages.at(-1)?.content ?? "";
+  const pageMatch = latest.match(/\b(?:página|pagina|página\s+n[.º°]?|pagina\s+n[.º°]?|p[.]?)\s*(\d{1,5})\b/iu);
+  if (!pageMatch) return null;
+
+  const page = Number(pageMatch[1]);
+  if (!Number.isSafeInteger(page) || page < 1) return null;
+
+  let filename: string | null = null;
+  for (const message of [...messages].reverse()) {
+    if (message.role !== "user") continue;
+    const quoted = [...message.content.matchAll(/["“']([^"“”'\n]{1,240}[.]pdf)["”']?/giu)]
+      .flatMap((match) => match[1] ? [match[1].trim()] : []);
+    const compact = message.content.match(/\b[\p{L}\p{N}_.()\-]+[.]pdf\b/giu) ?? [];
+    const candidates = [...new Set(quoted.length ? quoted : compact)];
+    if (candidates.length > 1) return { page, filename: null };
+    const candidate = candidates[0];
+    if (candidate) {
+      filename = candidate;
+      break;
+    }
+  }
+
+  return { page, filename };
+}
+
+function basename(value: string): string {
+  return value.split("/").at(-1) || value;
+}
+
+function normalizedFilename(value: string): string {
+  return basename(value).normalize("NFKC").trim().toLocaleLowerCase("pt-BR");
+}
+
+function chunkPage(metadata: Record<string, unknown> | undefined): number | null {
+  if (!metadata) return null;
+  for (const key of ["page", "page_number", "pageNumber"]) {
+    const value = metadata[key];
+    const page = typeof value === "number" ? value : Number(value);
+    if (Number.isSafeInteger(page) && page > 0) return page;
+  }
+  return null;
+}
+
+function sseTextResponse(
+  answer: string,
+  chunks: Array<{ id: string; text: string; item: { key: string; metadata?: Record<string, unknown> } }> = [],
+  headers: HeadersInit = {},
+): Response {
+  const encoder = new TextEncoder();
+  const body = new ReadableStream({
+    start(controller) {
+      if (chunks.length) {
+        const publicChunks = chunks.map((chunk) => ({ ...chunk, type: "text", score: 1 }));
+        controller.enqueue(encoder.encode(`event: chunks\ndata: ${JSON.stringify(publicChunks)}\n\n`));
+      }
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: answer } }] })}\n\n`));
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+  return new Response(body, {
+    headers: {
+      "content-type": "text/event-stream; charset=utf-8",
+      "cache-control": "no-cache, no-store",
+      "x-content-type-options": "nosniff",
+      ...headers,
+    },
+  });
+}
+
+async function exactPageResponse(
+  request: ExactPageRequest,
+  env: Env,
+  headers: HeadersInit,
+): Promise<Response> {
+  if (!request.filename) {
+    return sseTextResponse(
+      `De qual documento você quer a página ${request.page}? Informe o nome do PDF para eu consultar a página exata.`,
+      [],
+      headers,
+    );
+  }
+
+  const listed = await env.AI_SEARCH.items.list({ search: request.filename, per_page: 50 });
+  const wanted = normalizedFilename(request.filename);
+  const item = listed.result.find((candidate) => normalizedFilename(candidate.key) === wanted);
+  if (!item) {
+    return sseTextResponse(
+      `Não encontrei o documento “${basename(request.filename)}” no índice. Confira o nome do PDF e tente novamente.`,
+      [],
+      headers,
+    );
+  }
+
+  const matchingChunks: AiSearchItemChunk[] = [];
+  let offset = 0;
+  let total = 1;
+  while (offset < total && offset < 2_000) {
+    const page = await env.AI_SEARCH.items.get(item.id).chunks({ limit: 100, offset });
+    total = page.result_info.total;
+    matchingChunks.push(...page.result.filter((chunk) => chunkPage(chunk.item?.metadata) === request.page));
+    offset += page.result_info.count;
+    if (page.result_info.count === 0) break;
+  }
+
+  if (!matchingChunks.length) {
+    return sseTextResponse(
+      `O documento “${basename(item.key)}” está indexado, mas a página ${request.page} não possui texto identificável por página no índice atual. Será necessário reindexar esse PDF com separação por páginas.`,
+      [],
+      headers,
+    );
+  }
+
+  const text = matchingChunks.map((chunk) => chunk.text.trim()).filter(Boolean).join("\n\n");
+  const answer = `Conteúdo recuperado da página ${request.page} de “${basename(item.key)}”:\n\n${text}`;
+  return sseTextResponse(answer, matchingChunks.map((chunk) => ({
+    id: chunk.id,
+    text: chunk.text,
+    item: {
+      key: chunk.item?.key || item.key,
+      metadata: { ...(chunk.item?.metadata ?? {}), page: request.page },
+    },
+  })), headers);
 }
 
 function parsePodcastAudioBody(value: unknown): PodcastAudioBody | null {
@@ -456,6 +587,13 @@ export default {
     }
 
     try {
+      const exactPage = parseExactPageRequest(body.messages);
+      if (exactPage) {
+        const response = await exactPageResponse(exactPage, env, usageHeaders(reservation));
+        ctx.waitUntil(recordUsageOutcome(env, reservation, "success"));
+        return response;
+      }
+
       const stream = await env.AI_SEARCH.chatCompletions({
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
