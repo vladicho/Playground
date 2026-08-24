@@ -1389,11 +1389,11 @@ async function createPodcastVideo(audioBlob, text, title, onProgress) {
     ...destination.stream.getAudioTracks(),
   ]);
   const mimeType = [
+    "video/webm;codecs=vp8,opus",
+    "video/webm",
+    "video/webm;codecs=vp9,opus",
     "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
     "video/mp4",
-    "video/webm;codecs=vp8,opus",
-    "video/webm;codecs=vp9,opus",
-    "video/webm",
   ].find((type) => MediaRecorder.isTypeSupported(type));
   if (!mimeType) {
     stream.getTracks().forEach((track) => track.stop());
