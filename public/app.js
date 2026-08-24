@@ -1,4 +1,12 @@
 import { renderMathIn } from "./math.js";
+import {
+  applyTranslations,
+  getLanguage,
+  getLocale,
+  localizePrompt,
+  onLanguageChange,
+  t,
+} from "./i18n.js";
 
 const conversation = document.querySelector("#conversation");
 const form = document.querySelector("#chat-form");
@@ -74,32 +82,32 @@ const MODES = {
   summary: {
     placeholder: "Assunto ou nome do documento para resumir…",
     prompt: (topic) =>
-      `Crie um resumo didático sobre "${topic}" usando somente informações sustentadas pelos documentos recuperados. Organize em: visão geral, conceitos principais, fórmulas ou definições importantes e pontos para revisar. Diferencie claramente o conteúdo das fontes de qualquer explicação sua.`,
+      localizePrompt('Crie um resumo didático sobre "{topic}" usando somente informações sustentadas pelos documentos recuperados. Organize em: visão geral, conceitos principais, fórmulas ou definições importantes e pontos para revisar. Diferencie claramente o conteúdo das fontes de qualquer explicação sua.', topic),
   },
   quiz: {
     placeholder: "Assunto do quiz…",
     prompt: (topic) =>
-      `Crie um quiz de estudo sobre "${topic}" com 5 questões objetivas baseadas nos documentos recuperados. Dê quatro alternativas por questão. Coloque o gabarito comentado somente depois de todas as perguntas e explique qual informação da fonte sustenta cada resposta.`,
+      localizePrompt('Crie um quiz de estudo sobre "{topic}" com 5 questões objetivas baseadas nos documentos recuperados. Dê quatro alternativas por questão. Coloque o gabarito comentado somente depois de todas as perguntas e explique qual informação da fonte sustenta cada resposta.', topic),
   },
   flashcards: {
     placeholder: "Assunto dos flashcards…",
     prompt: (topic) =>
-      `Crie 10 flashcards sobre "${topic}" com base nos documentos recuperados. Use o formato numerado "Frente:" e "Verso:". Faça cartões curtos, sem repetir ideias, e não invente informações ausentes nas fontes.`,
+      localizePrompt('Crie 10 flashcards sobre "{topic}" com base nos documentos recuperados. Use o formato numerado "Frente:" e "Verso:". Faça cartões curtos, sem repetir ideias, e não invente informações ausentes nas fontes.', topic),
   },
   mindmap: {
     placeholder: "Assunto do mapa mental…",
     prompt: (topic) =>
-      `Crie um mapa mental sobre "${topic}" usando os documentos recuperados. Dê uma introdução curta e depois inclua obrigatoriamente um bloco entre as linhas "MAPA MENTAL" e "FIM DO MAPA". Dentro dele, use apenas marcadores com hífen: a primeira linha sem recuo é o tema central; ramos usam dois espaços de recuo; sub-ramos usam quatro espaços. Limite a 24 nós com textos curtos. Inclua conceitos, relações, fórmulas e exemplos somente quando sustentados pelas fontes.`,
+      localizePrompt('Crie um mapa mental sobre "{topic}" usando os documentos recuperados. Dê uma introdução curta e depois inclua obrigatoriamente um bloco entre as linhas "MAPA MENTAL" e "FIM DO MAPA". Dentro dele, use apenas marcadores com hífen: a primeira linha sem recuo é o tema central; ramos usam dois espaços de recuo; sub-ramos usam quatro espaços. Limite a 24 nós com textos curtos. Inclua conceitos, relações, fórmulas e exemplos somente quando sustentados pelas fontes.', topic),
   },
   podcast: {
     placeholder: "Assunto do roteiro de podcast…",
     prompt: (topic) =>
-      `Crie um roteiro curto de podcast educativo, de aproximadamente 3 minutos, sobre "${topic}". Use duas vozes chamadas Apresentador e Especialista, linguagem natural e explicações baseadas nos documentos recuperados. Termine com três pontos de revisão. Não invente fatos ausentes nas fontes.`,
+      localizePrompt('Crie um roteiro curto de podcast educativo, de aproximadamente 3 minutos, sobre "{topic}". Use duas vozes chamadas Apresentador e Especialista, linguagem natural e explicações baseadas nos documentos recuperados. Termine com três pontos de revisão. Não invente fatos ausentes nas fontes.', topic),
   },
   exam: {
     placeholder: "Assunto ou documento do simulado…",
     prompt: (topic) =>
-      `Crie um simulado sobre "${topic}" usando somente informações sustentadas pelos documentos recuperados. Produza exatamente 5 questões, cada uma com 4 alternativas plausíveis e apenas uma correta. Retorne somente um bloco no formato abaixo, com JSON válido e sem cercas de código ou comentários:\nSIMULADO_JSON\n{"title":"Título curto","questions":[{"question":"Enunciado","options":["Alternativa A","Alternativa B","Alternativa C","Alternativa D"],"correct":0,"explanation":"Correção comentada","source":"Nome do documento que sustenta a questão"}]}\nFIM_SIMULADO_JSON\nO campo correct deve ser um inteiro de 0 a 3. Use notação matemática simples ou escape corretamente barras invertidas do LaTeX dentro do JSON. Não revele respostas fora do JSON.`,
+      localizePrompt('Crie um simulado sobre "{topic}" usando somente informações sustentadas pelos documentos recuperados. Produza exatamente 5 questões, cada uma com 4 alternativas plausíveis e apenas uma correta. Retorne somente um bloco no formato abaixo, com JSON válido e sem cercas de código ou comentários:\nSIMULADO_JSON\n{"title":"Título curto","questions":[{"question":"Enunciado","options":["Alternativa A","Alternativa B","Alternativa C","Alternativa D"],"correct":0,"explanation":"Correção comentada","source":"Nome do documento que sustenta a questão"}]}\nFIM_SIMULADO_JSON\nO campo correct deve ser um inteiro de 0 a 3. Use notação matemática simples ou escape corretamente barras invertidas do LaTeX dentro do JSON. Não revele respostas fora do JSON.', topic),
   },
 };
 
@@ -359,9 +367,9 @@ function newNotebookId() {
 }
 
 function notebookLevel(entry) {
-  if (entry.reviewStage === 0) return "Novo";
-  if (entry.reviewStage < 3) return "Aprendendo";
-  return "Dominado";
+  if (entry.reviewStage === 0) return t("Novo");
+  if (entry.reviewStage < 3) return t("Aprendendo");
+  return t("Dominado");
 }
 
 function isReviewDue(entry, now = Date.now()) {
@@ -371,9 +379,9 @@ function isReviewDue(entry, now = Date.now()) {
 
 function formatReviewDate(value) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "sem data";
-  if (isReviewDue({ nextReviewAt: value })) return "agora";
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(date);
+  if (Number.isNaN(date.getTime())) return t("sem data");
+  if (isReviewDue({ nextReviewAt: value })) return t("agora");
+  return new Intl.DateTimeFormat(getLocale(), { dateStyle: "short" }).format(date);
 }
 
 function localDayKey(value) {
@@ -460,7 +468,7 @@ function renderReviewDashboard() {
     }
   }
   bookProgressList.replaceChildren();
-  const sorted = [...books].sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0], "pt-BR"));
+  const sorted = [...books].sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0], getLocale()));
   if (sorted.length === 0) {
     const empty = document.createElement("p");
     empty.textContent = "Salve materiais com fontes para acompanhar livros.";
@@ -487,7 +495,7 @@ function renderReviewDashboard() {
   }
   topicProgressList.replaceChildren();
   const sortedTopics = [...topics].sort(
-    (a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0], "pt-BR"),
+    (a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0], getLocale()),
   );
   if (sortedTopics.length === 0) {
     const empty = document.createElement("p");
@@ -561,8 +569,8 @@ function saveMaterialToNotebook(material, button) {
 
 function formatNotebookDate(value) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Data não disponível";
-  return new Intl.DateTimeFormat("pt-BR", {
+  if (Number.isNaN(date.getTime())) return t("Data não disponível");
+  return new Intl.DateTimeFormat(getLocale(), {
     dateStyle: "short",
     timeStyle: "short",
   }).format(date);
@@ -669,7 +677,7 @@ function renderNotebook() {
     const header = document.createElement("header");
     const heading = document.createElement("div");
     const meta = document.createElement("p");
-    meta.textContent = `${MODE_LABELS[entry.mode] || MODE_LABELS.ask} · ${notebookLevel(entry)} · próxima: ${formatReviewDate(entry.nextReviewAt)}`;
+    meta.textContent = `${t(MODE_LABELS[entry.mode] || MODE_LABELS.ask)} · ${notebookLevel(entry)} · ${getLanguage() === "es" ? "próxima" : "próxima"}: ${formatReviewDate(entry.nextReviewAt)}`;
     const title = document.createElement("h3");
     title.textContent = entry.title;
     heading.append(meta, title);
@@ -694,7 +702,7 @@ function renderNotebook() {
       if (!body.hidden) renderNotebookBody(body, entry);
     });
     remove.addEventListener("click", () => {
-      if (!window.confirm(`Excluir "${entry.title}" do caderno?`)) return;
+      if (!window.confirm(getLanguage() === "es" ? `¿Eliminar "${entry.title}" del cuaderno?` : `Excluir "${entry.title}" do caderno?`)) return;
       notebookEntries = notebookEntries.filter((candidate) => candidate.id !== entry.id);
       persistNotebook();
       renderNotebook();
@@ -716,7 +724,7 @@ function printNotebook() {
   const title = document.createElement("h1");
   title.textContent = "Caderno de estudos";
   const metadata = document.createElement("p");
-  metadata.textContent = `${entries.length} materiais · ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date())}`;
+  metadata.textContent = `${entries.length} ${getLanguage() === "es" ? "materiales" : "materiais"} · ${new Intl.DateTimeFormat(getLocale(), { dateStyle: "long" }).format(new Date())}`;
   heading.append(brand, title, metadata);
   sheet.append(heading);
 
@@ -726,7 +734,7 @@ function printNotebook() {
     materialTitle.textContent = entry.title;
     const materialMeta = document.createElement("p");
     materialMeta.className = "notebook-print-meta";
-    materialMeta.textContent = `${MODE_LABELS[entry.mode] || MODE_LABELS.ask} · ${notebookLevel(entry)} · próxima revisão: ${formatReviewDate(entry.nextReviewAt)} · salvo em ${formatNotebookDate(entry.createdAt)}`;
+    materialMeta.textContent = `${t(MODE_LABELS[entry.mode] || MODE_LABELS.ask)} · ${notebookLevel(entry)} · ${getLanguage() === "es" ? "próxima revisión" : "próxima revisão"}: ${formatReviewDate(entry.nextReviewAt)} · ${getLanguage() === "es" ? "guardado el" : "salvo em"} ${formatNotebookDate(entry.createdAt)}`;
     const answer = document.createElement("div");
     answer.className = "notebook-print-answer";
     answer.textContent = entry.answer;
@@ -749,7 +757,7 @@ function printNotebook() {
   document.body.append(sheet);
   document.body.classList.add("notebook-printing");
   const previousTitle = document.title;
-  document.title = "Caderno de estudos - Biblioteca Matemática";
+  document.title = `${t("Caderno de estudos")} - ${t("Biblioteca Matemática")}`;
   const cleanup = () => {
     sheet.remove();
     document.body.classList.remove("notebook-printing");
@@ -847,7 +855,7 @@ function ensureStudyTimerInterval() {
 
 function startStudyTask(task) {
   if (studyPlan.activeTimer && studyPlan.activeTimer.taskId !== task.id) {
-    if (!window.confirm("Substituir a sessão que já está em andamento?")) return;
+    if (!window.confirm(t("Substituir a sessão que já está em andamento?"))) return;
   }
   const totalSeconds = Math.max(5, Math.min(task.minutes, 240)) * 60;
   studyPlan.activeTimer = {
@@ -890,14 +898,14 @@ function generatedPlanTopics() {
     seen.add(key);
     topics.push(entry.title);
   }
-  return topics.length ? topics : ["Estudo livre de matemática"];
+  return topics.length ? topics : [t("Estudo livre de matemática")];
 }
 
 function generateStudyWeek() {
   const selectedDays = [...document.querySelectorAll('input[name="study-day"]:checked')]
     .map((input) => Number(input.value));
   if (selectedDays.length === 0) {
-    window.alert("Selecione pelo menos um dia de estudo.");
+    window.alert(t("Selecione pelo menos um dia de estudo."));
     return;
   }
   const minutes = Math.max(5, Math.min(Number(planDefaultMinutes.value) || 45, 240));
@@ -917,7 +925,7 @@ function generateStudyWeek() {
     );
     studyPlan.tasks.push({
       id: newNotebookId(),
-      title: `${due ? "Revisar" : "Estudar"}: ${topic}`,
+      title: `${t(due ? "Revisar" : "Estudar")}: ${topic}`,
       date: dateKey,
       minutes,
       done: false,
@@ -953,7 +961,7 @@ function renderStudyPlan() {
   planPercent.textContent = `${percent}%`;
   planProgress.value = percent;
   planProgress.textContent = `${percent}%`;
-  planWeekLabel.textContent = `${new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(dates[0])} – ${new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).format(dates[6])}`;
+  planWeekLabel.textContent = `${new Intl.DateTimeFormat(getLocale(), { day: "2-digit", month: "short" }).format(dates[0])} – ${new Intl.DateTimeFormat(getLocale(), { day: "2-digit", month: "short", year: "numeric" }).format(dates[6])}`;
 
   const today = planDateKey();
   const todayPending = studyPlan.tasks.filter((task) => task.date === today && !task.done).length;
@@ -967,9 +975,9 @@ function renderStudyPlan() {
     day.classList.toggle("today", dateKey === today);
     const heading = document.createElement("header");
     const weekday = document.createElement("strong");
-    weekday.textContent = new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date).replace(".", "");
+    weekday.textContent = new Intl.DateTimeFormat(getLocale(), { weekday: "short" }).format(date).replace(".", "");
     const dayNumber = document.createElement("span");
-    dayNumber.textContent = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(date);
+    dayNumber.textContent = new Intl.DateTimeFormat(getLocale(), { day: "2-digit", month: "2-digit" }).format(date);
     heading.append(weekday, dayNumber);
     day.append(heading);
 
@@ -1006,7 +1014,7 @@ function renderStudyPlan() {
       removeButton.textContent = "×";
       removeButton.setAttribute("aria-label", `Excluir meta ${task.title}`);
       removeButton.addEventListener("click", () => {
-        if (!window.confirm(`Excluir a meta "${task.title}"?`)) return;
+        if (!window.confirm(getLanguage() === "es" ? `¿Eliminar la meta "${task.title}"?` : `Excluir a meta "${task.title}"?`)) return;
         studyPlan.tasks = studyPlan.tasks.filter((candidate) => candidate.id !== task.id);
         if (studyPlan.activeTimer?.taskId === task.id) studyPlan.activeTimer = null;
         persistStudyPlan();
@@ -1045,7 +1053,9 @@ function selectCatalogBook(book) {
   if (!book.indexed) return;
   catalogDialog.close();
   setMode("ask");
-  input.value = `Usando o documento "${book.filename}", explique os conceitos principais e sugira uma sequência de estudo.`;
+  input.value = getLanguage() === "es"
+    ? `Usando el documento "${book.filename}", explica los conceptos principales y sugiere una secuencia de estudio.`
+    : `Usando o documento "${book.filename}", explique os conceitos principais e sugira uma sequência de estudo.`;
   resizeInput();
   input.focus();
   input.setSelectionRange(input.value.length, input.value.length);
@@ -1281,11 +1291,11 @@ function renderAudioControls(article, text) {
       .replace(/\s+/g, " ")
       .trim();
     const utterance = new SpeechSynthesisUtterance(spokenText);
-    utterance.lang = "pt-BR";
+    utterance.lang = getLocale();
     utterance.rate = 1;
     const voice = window.speechSynthesis
       .getVoices()
-      .find((candidate) => candidate.lang.toLowerCase().startsWith("pt-br"));
+      .find((candidate) => candidate.lang.toLowerCase().startsWith(getLanguage() === "es" ? "es" : "pt-br"));
     if (voice) utterance.voice = voice;
     utterance.addEventListener("end", reset, { once: true });
     utterance.addEventListener("error", reset, { once: true });
@@ -1572,7 +1582,7 @@ function parseExam(text) {
         source: typeof question.source === "string" ? question.source : "",
       };
     });
-    return { title: typeof data.title === "string" ? data.title : "Simulado", questions };
+    return { title: typeof data.title === "string" ? data.title : t("Simulado"), questions };
   } catch {
     return null;
   }
@@ -1587,7 +1597,7 @@ function renderExam(article, content, text, fallbackTitle) {
   const exam = parseExam(text);
   if (!exam) return false;
 
-  content.textContent = "Simulado pronto. As respostas serão reveladas somente após a entrega.";
+  content.textContent = t("Simulado pronto. As respostas serão reveladas somente após a entrega.");
   const panel = document.createElement("section");
   panel.className = "exam-panel";
   const header = document.createElement("header");
@@ -1759,11 +1769,11 @@ function renderExportControls(article, title, mode, material) {
   const heading = document.createElement("h1");
   heading.textContent = title;
   const metadata = document.createElement("p");
-  const date = new Intl.DateTimeFormat("pt-BR", {
+  const date = new Intl.DateTimeFormat(getLocale(), {
     dateStyle: "long",
     timeStyle: "short",
   }).format(new Date());
-  metadata.textContent = `${MODE_LABELS[mode] || MODE_LABELS.ask} · ${date}`;
+  metadata.textContent = `${t(MODE_LABELS[mode] || MODE_LABELS.ask)} · ${date}`;
   printHeader.append(brand, heading, metadata);
   article.prepend(printHeader);
 
@@ -1781,7 +1791,7 @@ function renderExportControls(article, title, mode, material) {
     article.classList.add("print-target");
     document.body.classList.add("printing");
     const previousTitle = document.title;
-    document.title = `${MODE_LABELS[mode] || "Biblioteca"} - ${title}`.slice(0, 120);
+    document.title = `${t(MODE_LABELS[mode] || "Biblioteca")} - ${title}`.slice(0, 120);
     const cleanup = () => {
       article.classList.remove("print-target");
       document.body.classList.remove("printing");
@@ -1798,7 +1808,7 @@ function renderExportControls(article, title, mode, material) {
 function setMode(mode) {
   if (!(mode in MODES) || state.busy) return;
   state.mode = mode;
-  input.placeholder = MODES[mode].placeholder;
+  input.placeholder = t(MODES[mode].placeholder);
   modeButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.mode === mode);
     button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
@@ -1853,7 +1863,7 @@ async function ask(question, displayQuestion = question, mode = "ask") {
 
     if (!response.ok || !response.body) {
       const data = await response.json().catch(() => null);
-      throw new Error(data?.error || "Não foi possível consultar a biblioteca.");
+      throw new Error(t(data?.error || "Não foi possível consultar a biblioteca."));
     }
 
     const reader = response.body.getReader();
@@ -1878,7 +1888,7 @@ async function ask(question, displayQuestion = question, mode = "ask") {
 
     if (buffer) consumeSseBlock(buffer, assistant.content, sources);
     const answer = assistant.content.textContent.trim();
-    if (!answer) throw new Error("A biblioteca não retornou uma resposta.");
+    if (!answer) throw new Error(t("A biblioteca não retornou uma resposta."));
 
     state.messages.push({ role: "assistant", content: answer });
     const examRendered = mode === "exam" && renderExam(
@@ -1899,7 +1909,7 @@ async function ask(question, displayQuestion = question, mode = "ask") {
     });
   } catch (error) {
     assistant.article.classList.add("error");
-    assistant.content.textContent = error instanceof Error ? error.message : "Ocorreu um erro inesperado.";
+    assistant.content.textContent = error instanceof Error ? t(error.message) : t("Ocorreu um erro inesperado.");
   } finally {
     assistant.content.classList.remove("typing");
     state.busy = false;
@@ -2071,6 +2081,15 @@ planNextWeek.addEventListener("click", () => {
 planCurrentWeek.addEventListener("click", () => {
   planWeekOffset = 0;
   renderStudyPlan();
+});
+
+onLanguageChange(() => {
+  input.placeholder = t(MODES[state.mode].placeholder);
+  renderQueue();
+  renderNotebook();
+  renderStudyPlan();
+  if (catalogBooks) renderCatalog();
+  applyTranslations();
 });
 
 renderQueue();

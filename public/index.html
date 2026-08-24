@@ -20,6 +20,10 @@
           </span>
         </a>
         <div class="topbar-actions">
+          <div class="language-switch" role="group" aria-label="Idioma da interface">
+            <button type="button" data-language="pt" aria-pressed="true">PT</button>
+            <button type="button" data-language="es" aria-pressed="false">ES</button>
+          </div>
           <span class="status"><i></i> Base conectada</span>
           <button id="catalog-open" class="ghost-button catalog-button" type="button">Catálogo</button>
           <button id="notebook-open" class="ghost-button" type="button">Caderno</button>
@@ -112,13 +116,13 @@
             <span class="sr-only">Filtrar por categoria</span>
             <select id="catalog-category">
               <option value="">Todas as categorias</option>
-              <option>Aritmética</option>
-              <option>Álgebra</option>
-              <option>Geometria e trigonometria</option>
-              <option>Cálculo e análise</option>
-              <option>Matemática discreta</option>
-              <option>Estatística e probabilidade</option>
-              <option>Matemática geral</option>
+              <option value="Aritmética">Aritmética</option>
+              <option value="Álgebra">Álgebra</option>
+              <option value="Geometria e trigonometria">Geometria e trigonometria</option>
+              <option value="Cálculo e análise">Cálculo e análise</option>
+              <option value="Matemática discreta">Matemática discreta</option>
+              <option value="Estatística e probabilidade">Estatística e probabilidade</option>
+              <option value="Matemática geral">Matemática geral</option>
             </select>
           </label>
           <label class="catalog-indexed-filter">

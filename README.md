@@ -8,6 +8,7 @@ Cloudflare AI Search.
 - Cloudflare Worker com binding direto ao AI Search.
 - Static Assets para a interface web.
 - Respostas transmitidas por Server-Sent Events.
+- Interface em português e espanhol, com idioma persistido no navegador.
 - Modos de estudo: resumo, quiz, flashcards, mapa mental e roteiro de podcast
   com leitura em voz alta pelo dispositivo.
 - Mapa mental gráfico com zoom e exportação em PNG.

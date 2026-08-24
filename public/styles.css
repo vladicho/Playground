@@ -79,6 +79,31 @@ button { color: inherit; }
 
 .topbar-actions { display: flex; align-items: center; gap: .65rem; }
 
+.language-switch {
+  display: inline-flex;
+  padding: .18rem;
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  background: rgba(255, 255, 255, .025);
+}
+
+.language-switch button {
+  min-width: 2rem;
+  border: 0;
+  border-radius: .45rem;
+  padding: .34rem .42rem;
+  color: var(--muted);
+  background: transparent;
+  font-size: .68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.language-switch button.active {
+  color: var(--ink);
+  background: var(--accent);
+}
+
 .status {
   display: inline-flex;
   align-items: center;
@@ -1159,7 +1184,7 @@ h1 span { color: var(--accent); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @media (max-width: 700px) {
-  .topbar { padding: .85rem 1rem; }
+  .topbar { flex-wrap: wrap; padding: .85rem 1rem; }
   .brand small { display: none; }
   .status { display: none; }
   .conversation { padding-top: 2.5rem; }
@@ -1170,7 +1195,9 @@ h1 span { color: var(--accent); }
   .suggestions span { margin-bottom: .75rem; }
   .message.user .message-content { max-width: 92%; }
   .composer-wrap { padding-inline: .75rem; }
-  .topbar-actions { gap: .2rem; }
+  .topbar-actions { flex: 1 1 100%; justify-content: space-between; gap: .2rem; }
+  .language-switch { order: -1; }
+  .language-switch button { min-width: 1.75rem; padding-inline: .3rem; }
   .ghost-button { padding-inline: .5rem; font-size: .78rem; }
   .catalog-dialog { width: 100vw; height: 100dvh; max-width: none; max-height: none; border: 0; border-radius: 0; }
   .catalog-header { padding: 1rem; }

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && node --check public/app.js && node --check public/math.js",
+    "check": "npm run typecheck && node --check public/app.js && node --check public/i18n.js && node --check public/math.js",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
