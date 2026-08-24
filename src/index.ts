@@ -24,6 +24,11 @@ type ChatBody = {
   messages: ClientMessage[];
 };
 
+type PodcastAudioBody = {
+  text: string;
+  language: "pt" | "es";
+};
+
 type RequestIdentity = {
   id: string;
   email: string | null;
@@ -70,6 +75,81 @@ function parseChatBody(value: unknown): ChatBody | null {
   if (messages.at(-1)?.role !== "user") return null;
 
   return { messages };
+}
+
+function parsePodcastAudioBody(value: unknown): PodcastAudioBody | null {
+  if (typeof value !== "object" || value === null) return null;
+  const record = value as { text?: unknown; language?: unknown };
+  if (typeof record.text !== "string") return null;
+  if (record.language !== "pt" && record.language !== "es") return null;
+
+  const text = record.text
+    .replace(/[*_#`]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (text.length < 1 || text.length > 6_000) return null;
+  return { text, language: record.language };
+}
+
+async function podcastAudio(request: Request, env: Env): Promise<Response> {
+  if (request.method !== "POST") {
+    return new Response(null, {
+      status: 405,
+      headers: { allow: "POST", "cache-control": "no-store" },
+    });
+  }
+
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (contentLength > 16_000) {
+    return jsonError("O roteiro excedeu o limite permitido.", 413);
+  }
+
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return jsonError("JSON inválido.", 400);
+  }
+
+  const body = parsePodcastAudioBody(rawBody);
+  if (!body) {
+    return jsonError("Envie um roteiro válido em português ou espanhol.", 400);
+  }
+
+  try {
+    const result = await env.AI.run("xai/grok-tts", {
+      text: body.text,
+      language: body.language === "es" ? "es-ES" : "pt-BR",
+      voice_id: body.language === "es" ? "ara" : "sal",
+      text_normalization: true,
+    });
+    const audioUrl = typeof result === "object" && result !== null && "audio" in result
+      ? String((result as { audio: unknown }).audio)
+      : "";
+    if (!audioUrl.startsWith("https://")) {
+      throw new Error("Workers AI não retornou áudio.");
+    }
+
+    const response = await fetch(audioUrl);
+    if (!response.ok || !response.body) throw new Error("Falha ao recuperar o áudio gerado.");
+
+    return new Response(response.body, {
+      headers: {
+        "content-type": response.headers.get("content-type") || "audio/mpeg",
+        "cache-control": "private, no-store",
+        "content-disposition": 'inline; filename="podcast-playground.mp3"',
+        "x-content-type-options": "nosniff",
+      },
+    });
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        message: "podcast audio generation failed",
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    return jsonError("Não foi possível gerar o áudio do podcast agora.", 502);
+  }
 }
 
 function parsePositiveLimit(value: string | undefined): number | null {
@@ -318,6 +398,10 @@ export default {
         { ok: true, service: "playground-rag" },
         { headers: JSON_HEADERS },
       );
+    }
+
+    if (url.pathname === "/api/podcast/audio") {
+      return podcastAudio(request, env);
     }
 
     if (url.pathname !== "/api/chat") {

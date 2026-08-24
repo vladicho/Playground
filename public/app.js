@@ -1264,18 +1264,238 @@ function renderSources(article, chunks) {
   article.append(sources);
 }
 
-function renderAudioControls(article, text) {
-  if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
+function podcastPlainText(text) {
+  return text
+    .replace(/[*_#`]/g, "")
+    .replace(/\$+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
+function podcastSlides(text) {
+  const clean = text.replace(/[*_#`]/g, "").replace(/\$+/g, "");
+  const parts = clean
+    .split(/\n{2,}|(?<=[.!?])\s+(?=[A-ZÀ-Ü¿¡])/u)
+    .map((part) => part.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const slides = [];
+  let current = "";
+  for (const part of parts) {
+    if (current && `${current} ${part}`.length > 210) {
+      slides.push(current);
+      current = part;
+    } else {
+      current = current ? `${current} ${part}` : part;
+    }
+  }
+  if (current) slides.push(current);
+  return slides.length ? slides.slice(0, 24) : [clean];
+}
+
+function wrapCanvasText(context, text, maxWidth) {
+  const words = text.split(/\s+/);
+  const lines = [];
+  let line = "";
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (line && context.measureText(test).width > maxWidth) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.slice(0, 7);
+}
+
+function drawPodcastFrame(context, title, slides, progress, elapsed, duration) {
+  const { width, height } = context.canvas;
+  const slideIndex = Math.min(slides.length - 1, Math.floor(progress * slides.length));
+  const gradient = context.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "#0b2118");
+  gradient.addColorStop(1, "#16382a");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = "#f2cb69";
+  context.font = "700 24px system-ui, sans-serif";
+  context.fillText("∑ PLAYGROUND MATEMÁTICO", 48, 55);
+  context.fillStyle = "#9fb5a8";
+  context.font = "500 18px system-ui, sans-serif";
+  context.fillText(title.slice(0, 70), 48, 88);
+
+  const pulse = 12 + Math.sin(elapsed * 7) * 5;
+  context.beginPath();
+  context.arc(70, 153, pulse, 0, Math.PI * 2);
+  context.fillStyle = "rgba(242, 203, 105, .9)";
+  context.fill();
+  context.fillStyle = "#f3f7f4";
+  context.font = "600 28px system-ui, sans-serif";
+  const lines = wrapCanvasText(context, slides[slideIndex] || "", width - 150);
+  lines.forEach((line, index) => context.fillText(line, 110, 150 + index * 42));
+
+  const barX = 48;
+  const barY = height - 48;
+  const barWidth = width - 96;
+  context.fillStyle = "rgba(255, 255, 255, .14)";
+  context.fillRect(barX, barY, barWidth, 7);
+  context.fillStyle = "#f2cb69";
+  context.fillRect(barX, barY, barWidth * progress, 7);
+  context.fillStyle = "#c8d3cb";
+  context.font = "500 15px system-ui, sans-serif";
+  const seconds = Math.max(0, Math.ceil(duration - elapsed));
+  context.fillText(`${slideIndex + 1}/${slides.length}  ·  ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`, barX, barY - 14);
+}
+
+async function requestPodcastAudio(text) {
+  const response = await fetch("/api/podcast/audio", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text: podcastPlainText(text), language: getLanguage() }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(t(data?.error || "Não foi possível gerar o áudio do podcast agora."));
+  }
+  return response.blob();
+}
+
+async function createPodcastVideo(audioBlob, text, title, onProgress) {
+  if (!("MediaRecorder" in window) || (!("AudioContext" in window) && !("webkitAudioContext" in window))) {
+    throw new Error(t("Este navegador não consegue gerar o vídeo. Baixe o áudio."));
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 854;
+  canvas.height = 480;
+  const context = canvas.getContext("2d");
+  if (!context || typeof canvas.captureStream !== "function") {
+    throw new Error(t("Este navegador não consegue gerar o vídeo. Baixe o áudio."));
+  }
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  const audioContext = new AudioContextClass();
+  const audioBuffer = await audioContext.decodeAudioData(await audioBlob.arrayBuffer());
+  const destination = audioContext.createMediaStreamDestination();
+  const source = audioContext.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(destination);
+  source.connect(audioContext.destination);
+
+  const canvasStream = canvas.captureStream(15);
+  const stream = new MediaStream([
+    ...canvasStream.getVideoTracks(),
+    ...destination.stream.getAudioTracks(),
+  ]);
+  const mimeType = [
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+    "video/mp4",
+    "video/webm;codecs=vp8,opus",
+    "video/webm;codecs=vp9,opus",
+    "video/webm",
+  ].find((type) => MediaRecorder.isTypeSupported(type));
+  if (!mimeType) {
+    stream.getTracks().forEach((track) => track.stop());
+    await audioContext.close();
+    throw new Error(t("Este navegador não consegue gerar o vídeo. Baixe o áudio."));
+  }
+
+  const recorder = new MediaRecorder(stream, {
+    mimeType,
+    videoBitsPerSecond: 1_200_000,
+    audioBitsPerSecond: 96_000,
+  });
+  const chunks = [];
+  recorder.addEventListener("dataavailable", (event) => {
+    if (event.data.size) chunks.push(event.data);
+  });
+
+  const slides = podcastSlides(text);
+  const duration = audioBuffer.duration;
+  let animationFrame = 0;
+  let startedAt = 0;
+  const draw = () => {
+    const elapsed = Math.min(duration, audioContext.currentTime - startedAt);
+    const progress = duration ? elapsed / duration : 0;
+    drawPodcastFrame(context, title, slides, progress, elapsed, duration);
+    onProgress(progress);
+    if (recorder.state === "recording") animationFrame = window.requestAnimationFrame(draw);
+  };
+
+  const finished = new Promise((resolve, reject) => {
+    recorder.addEventListener("stop", () => resolve(new Blob(chunks, { type: mimeType })), { once: true });
+    recorder.addEventListener("error", () => reject(new Error(t("Não foi possível montar o vídeo."))), { once: true });
+  });
+
+  drawPodcastFrame(context, title, slides, 0, 0, duration);
+  recorder.start(1_000);
+  await audioContext.resume();
+  startedAt = audioContext.currentTime;
+  source.addEventListener("ended", () => {
+    if (recorder.state === "recording") recorder.stop();
+  }, { once: true });
+  source.start();
+  animationFrame = window.requestAnimationFrame(draw);
+
+  try {
+    return await finished;
+  } finally {
+    window.cancelAnimationFrame(animationFrame);
+    stream.getTracks().forEach((track) => track.stop());
+    await audioContext.close();
+  }
+}
+
+function renderAudioControls(article, text, topic) {
   const controls = document.createElement("div");
   controls.className = "audio-controls";
   const play = document.createElement("button");
   play.type = "button";
   play.textContent = "▶ Ouvir roteiro";
+  play.disabled = !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window);
   const stop = document.createElement("button");
   stop.type = "button";
   stop.textContent = "■ Parar";
   stop.disabled = true;
+  const generateAudio = document.createElement("button");
+  generateAudio.type = "button";
+  generateAudio.textContent = "↓ Gerar áudio";
+  const generateVideo = document.createElement("button");
+  generateVideo.type = "button";
+  generateVideo.textContent = "🎬 Gerar videoaula";
+  const status = document.createElement("small");
+  status.className = "podcast-status";
+  status.setAttribute("aria-live", "polite");
+  let audioBlob = null;
+  let audioUrl = null;
+
+  const ensureAudio = async () => {
+    if (audioBlob) return audioBlob;
+    generateAudio.disabled = true;
+    generateVideo.disabled = true;
+    status.textContent = t("Gerando narração…");
+    try {
+      audioBlob = await requestPodcastAudio(text);
+      audioUrl = URL.createObjectURL(audioBlob);
+      const player = document.createElement("audio");
+      player.controls = true;
+      player.preload = "metadata";
+      player.src = audioUrl;
+      player.className = "podcast-player";
+      const download = document.createElement("a");
+      download.href = audioUrl;
+      download.download = "podcast-playground.mp3";
+      download.className = "podcast-download";
+      download.textContent = t("Baixar MP3");
+      controls.after(player, download);
+      status.textContent = t("Áudio pronto.");
+      return audioBlob;
+    } finally {
+      generateAudio.disabled = Boolean(audioBlob);
+      generateVideo.disabled = false;
+    }
+  };
 
   const reset = () => {
     play.disabled = false;
@@ -1284,12 +1504,9 @@ function renderAudioControls(article, text) {
   };
 
   play.addEventListener("click", () => {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
     window.speechSynthesis.cancel();
-    const spokenText = text
-      .replace(/[*_#`]/g, "")
-      .replace(/\n+/g, ". ")
-      .replace(/\s+/g, " ")
-      .trim();
+    const spokenText = podcastPlainText(text);
     const utterance = new SpeechSynthesisUtterance(spokenText);
     utterance.lang = getLocale();
     utterance.rate = 1;
@@ -1310,7 +1527,43 @@ function renderAudioControls(article, text) {
     reset();
   });
 
-  controls.append(play, stop);
+  generateAudio.addEventListener("click", async () => {
+    try {
+      await ensureAudio();
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : t("Não foi possível gerar o áudio do podcast agora.");
+      generateAudio.disabled = false;
+    }
+  });
+
+  generateVideo.addEventListener("click", async () => {
+    try {
+      window.speechSynthesis?.cancel();
+      generateAudio.disabled = true;
+      generateVideo.disabled = true;
+      const blob = await ensureAudio();
+      generateVideo.disabled = true;
+      status.textContent = t("Montando videoaula… mantenha esta tela aberta.");
+      const video = await createPodcastVideo(blob, text, topic, (progress) => {
+        status.textContent = `${t("Montando videoaula… mantenha esta tela aberta.")} ${Math.round(progress * 100)}%`;
+      });
+      const videoUrl = URL.createObjectURL(video);
+      const download = document.createElement("a");
+      download.href = videoUrl;
+      download.download = `videoaula-playground.${video.type.startsWith("video/mp4") ? "mp4" : "webm"}`;
+      download.className = "podcast-download video-download";
+      download.textContent = t("Baixar videoaula");
+      controls.after(download);
+      status.textContent = t("Videoaula pronta.");
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : t("Não foi possível montar o vídeo.");
+    } finally {
+      generateAudio.disabled = Boolean(audioBlob);
+      generateVideo.disabled = false;
+    }
+  });
+
+  controls.append(play, stop, generateAudio, generateVideo, status);
   article.append(controls);
 }
 
@@ -1898,7 +2151,7 @@ async function ask(question, displayQuestion = question, mode = "ask") {
       displayQuestion,
     );
     if (!examRendered) renderMathIn(assistant.content);
-    if (mode === "podcast") renderAudioControls(assistant.article, answer);
+    if (mode === "podcast") renderAudioControls(assistant.article, answer, displayQuestion);
     if (mode === "mindmap") renderMindMap(assistant.article, answer, displayQuestion);
     renderSources(assistant.article, sources);
     renderExportControls(assistant.article, displayQuestion, mode, {

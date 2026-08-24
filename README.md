@@ -10,7 +10,8 @@ Cloudflare AI Search.
 - Respostas transmitidas por Server-Sent Events.
 - Interface em português e espanhol, com idioma persistido no navegador.
 - Modos de estudo: resumo, quiz, flashcards, mapa mental e roteiro de podcast
-  com leitura em voz alta pelo dispositivo.
+  com leitura local, MP3 gerado pelo Workers AI e videoaula MP4/WebM com slides
+  e legendas produzida no navegador.
 - Mapa mental gráfico com zoom e exportação em PNG.
 - Fórmulas em LaTeX renderizadas localmente com MathML e botão para copiar.
 - Exportação de respostas e materiais pelo diálogo Imprimir / Salvar PDF.
