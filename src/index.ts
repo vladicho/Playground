@@ -235,7 +235,7 @@ function generatedAudioUrl(value: unknown): string | null {
   return null;
 }
 
-function audioHeaders(engine: "grok" | "melotts"): HeadersInit {
+function audioHeaders(engine: "grok" | "aura" | "melotts"): HeadersInit {
   return {
     "content-type": "audio/mpeg",
     "cache-control": "private, no-store",
@@ -243,6 +243,26 @@ function audioHeaders(engine: "grok" | "melotts"): HeadersInit {
     "x-content-type-options": "nosniff",
     "x-playground-tts": engine,
   };
+}
+
+async function auraAudio(body: PodcastAudioBody, env: Env): Promise<Response> {
+  const response = await env.AI.run("@cf/deepgram/aura-2-es", {
+    text: body.text,
+    speaker: body.language === "es" ? "aquila" : "celeste",
+    encoding: "mp3",
+  }, { returnRawResponse: true });
+
+  if (!response.ok || !response.body) {
+    const detail = (await response.text()).slice(0, 500);
+    throw new Error(`Aura TTS falhou (${response.status}): ${detail || "resposta vazia"}`);
+  }
+
+  return new Response(response.body, {
+    headers: {
+      ...audioHeaders("aura"),
+      "content-type": response.headers.get("content-type") || "audio/mpeg",
+    },
+  });
 }
 
 async function melottsAudio(body: PodcastAudioBody, env: Env): Promise<Response> {
@@ -328,6 +348,13 @@ async function podcastAudio(request: Request, env: Env): Promise<Response> {
     }
   }
 
+  let auraError: unknown = null;
+  try {
+    return await auraAudio(body, env);
+  } catch (error) {
+    auraError = error;
+  }
+
   try {
     return await melottsAudio(body, env);
   } catch (fallbackError) {
@@ -335,6 +362,7 @@ async function podcastAudio(request: Request, env: Env): Promise<Response> {
       JSON.stringify({
         message: "podcast audio generation failed",
         grokError: grokError instanceof Error ? grokError.message : String(grokError),
+        auraError: auraError instanceof Error ? auraError.message : String(auraError),
         fallbackError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
       }),
     );
