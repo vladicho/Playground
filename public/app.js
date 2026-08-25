@@ -74,6 +74,21 @@ const planCurrentWeek = document.querySelector("#plan-current-week");
 const planWeekLabel = document.querySelector("#plan-week-label");
 const planCalendar = document.querySelector("#plan-calendar");
 
+function videoStoryboardInstruction() {
+  if (getLanguage() === "es") {
+    return `Además del guion, interpreta la explicación como una lección visual. Al final incluye obligatoriamente un bloque VIDEOAULA_JSON con JSON válido y sin cercas de código. Usa de 4 a 10 escenas y elige el tipo que realmente ayude a comprender, no una diapositiva de transcripción. Formato:
+VIDEOAULA_JSON
+{"title":"Título breve","scenes":[{"type":"title|equation|square|squareExpansion|groups|bars|numberLine|coordinate|diagram|table|final","heading":"Idea breve","caption":"Una frase de apoyo","duration":6,"steps":["paso 1","paso 2"],"sideLabel":"n","remainder":36,"total":3061,"equation":"2n+1=111","result":"3061 hombres","verification":"56²-75=3061"}]}
+FIM_VIDEOAULA_JSON
+Incluye solo los campos útiles para cada escena. Para squareExpansion usa sideLabel y equation; para groups usa groups [{"label":"...","count":4}]; para bars usa bars [{"label":"...","value":36}]; para numberLine usa min, max y points [{"value":0,"label":"..."}]; para coordinate usa points [{"x":0,"y":0,"label":"..."}] y segments [[0,1]]; para diagram usa nodes [{"id":"a","label":"...","x":0.2,"y":0.5}] y edges [{"from":"a","to":"b","label":"..."}]; para table usa headers y rows. El video debe mostrar objetos, relaciones espaciales, transformaciones y cuentas progresivas. No copies párrafos del guion en caption.`;
+  }
+  return `Além do roteiro, interprete a explicação como uma aula visual. No final inclua obrigatoriamente um bloco VIDEOAULA_JSON com JSON válido e sem cercas de código. Use de 4 a 10 cenas e escolha o tipo que realmente ajude a compreender, não um slide de transcrição. Formato:
+VIDEOAULA_JSON
+{"title":"Título curto","scenes":[{"type":"title|equation|square|squareExpansion|groups|bars|numberLine|coordinate|diagram|table|final","heading":"Ideia curta","caption":"Uma frase de apoio","duration":6,"steps":["passo 1","passo 2"],"sideLabel":"n","remainder":36,"total":3061,"equation":"2n+1=111","result":"3061 homens","verification":"56²-75=3061"}]}
+FIM_VIDEOAULA_JSON
+Inclua apenas os campos úteis em cada cena. Para squareExpansion use sideLabel e equation; para groups use groups [{"label":"...","count":4}]; para bars use bars [{"label":"...","value":36}]; para numberLine use min, max e points [{"value":0,"label":"..."}]; para coordinate use points [{"x":0,"y":0,"label":"..."}] e segments [[0,1]]; para diagram use nodes [{"id":"a","label":"...","x":0.2,"y":0.5}] e edges [{"from":"a","to":"b","label":"..."}]; para table use headers e rows. O vídeo deve mostrar objetos, relações espaciais, transformações e contas progressivas. Não copie parágrafos do roteiro em caption.`;
+}
+
 const MODES = {
   ask: {
     placeholder: "Pergunte sobre os documentos…",
@@ -102,7 +117,7 @@ const MODES = {
   podcast: {
     placeholder: "Assunto do roteiro de podcast…",
     prompt: (topic) =>
-      localizePrompt('Crie um roteiro curto de podcast educativo, de aproximadamente 3 minutos, sobre "{topic}". Use duas vozes chamadas Apresentador e Especialista, linguagem natural e explicações baseadas nos documentos recuperados. Termine com três pontos de revisão. Não invente fatos ausentes nas fontes.', topic),
+      `${localizePrompt('Crie um roteiro curto de podcast educativo, de aproximadamente 3 minutos, sobre "{topic}". Use duas vozes chamadas Apresentador e Especialista, linguagem natural e explicações baseadas nos documentos recuperados. Termine com três pontos de revisão. Não invente fatos ausentes nas fontes.', topic)}\n\n${videoStoryboardInstruction()}`,
   },
   exam: {
     placeholder: "Assunto ou documento do simulado…",
@@ -1272,24 +1287,85 @@ function podcastPlainText(text) {
     .trim();
 }
 
-function podcastSlides(text) {
-  const clean = text.replace(/[*_#`]/g, "").replace(/\$+/g, "");
-  const parts = clean
-    .split(/\n{2,}|(?<=[.!?])\s+(?=[A-ZÀ-Ü¿¡])/u)
-    .map((part) => part.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
-  const slides = [];
-  let current = "";
-  for (const part of parts) {
-    if (current && `${current} ${part}`.length > 210) {
-      slides.push(current);
-      current = part;
-    } else {
-      current = current ? `${current} ${part}` : part;
-    }
+const VIDEO_SCENE_TYPES = new Set([
+  "title", "equation", "square", "squareExpansion", "groups", "bars",
+  "numberLine", "coordinate", "diagram", "table", "final",
+]);
+
+function shortText(value, fallback = "", limit = 180) {
+  return typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, limit) : fallback;
+}
+
+function finiteNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function stripVideoStoryboard(text) {
+  return text
+    .replace(/\n?VIDEOAULA_JSON\s*[\s\S]*?FIM_VIDEOAULA_JSON\s*/i, "\n")
+    .trim();
+}
+
+function fallbackVideoStoryboard(text, fallbackTitle) {
+  const clean = podcastPlainText(stripVideoStoryboard(text));
+  if (/comandante|tropas?/iu.test(clean) && /quadrad/iu.test(clean) && /\b36\b/.test(clean) && /\b75\b/.test(clean)) {
+    const side = (36 + 75 - 1) / 2;
+    const total = side ** 2 + 36;
+    return {
+      title: "As tropas e o quadrado",
+      scenes: [
+        { type: "title", heading: "Como enxergar o problema?", caption: "Transforme as duas formações em áreas.", duration: 5 },
+        { type: "square", heading: "Formação original", sideLabel: "n", remainder: 36, equation: "N = n² + 36", caption: "O quadrado usa n² homens e 36 ficam de fora.", duration: 7 },
+        { type: "squareExpansion", heading: "Um homem a mais em cada lado", sideLabel: "n", equation: "n + n + 1 = 2n + 1", caption: "A nova borda tem duas faixas de n e um canto.", duration: 8 },
+        { type: "bars", heading: "Quantos homens a nova borda exige?", bars: [{ label: "Sobram", value: 36 }, { label: "Ainda faltam", value: 75 }, { label: "Nova borda", value: 111 }], caption: "Os 36 que sobravam mais os 75 que faltam completam a borda.", duration: 7 },
+        { type: "equation", heading: "Descobrindo o lado", steps: ["36 + 75 = 2n + 1", "111 = 2n + 1", "110 = 2n", `n = ${side}`], caption: "55 é o número de homens em cada lado, não o total.", duration: 8 },
+        { type: "square", heading: "Calculando o total", sideLabel: String(side), remainder: 36, total, caption: `${side}² homens no quadrado e mais 36 que sobraram.`, duration: 7 },
+        { type: "final", heading: "Resposta e verificação", result: `${total} homens`, verification: `${side + 1}² − 75 = ${total}`, caption: "A nova formação confirma o resultado.", duration: 7 },
+      ],
+    };
   }
-  if (current) slides.push(current);
-  return slides.length ? slides.slice(0, 24) : [clean];
+  const equations = [...clean.matchAll(/(?:\d+|[a-z])(?:\s*[+\-×÷=²^()]\s*(?:\d+|[a-z])){1,}/giu)]
+    .map((match) => match[0].trim())
+    .filter((value, index, list) => list.indexOf(value) === index)
+    .slice(0, 5);
+  return {
+    title: shortText(fallbackTitle, "Videoaula matemática", 70),
+    scenes: [
+      { type: "title", heading: shortText(fallbackTitle, "Videoaula matemática", 80), caption: "Observe a ideia antes de calcular.", duration: 5 },
+      { type: "equation", heading: "Raciocínio passo a passo", steps: equations.length ? equations : ["Identifique os dados", "Relacione as grandezas", "Verifique o resultado"], duration: 9 },
+      { type: "final", heading: "Conclusão", result: shortText(clean.match(/Resposta final:\s*([^.!?\n]+)/iu)?.[1], "Resultado verificado", 80), duration: 6 },
+    ],
+  };
+}
+
+function parseVideoStoryboard(text, fallbackTitle) {
+  const match = text.match(/VIDEOAULA_JSON\s*([\s\S]*?)\s*FIM_VIDEOAULA_JSON/i);
+  if (!match) return fallbackVideoStoryboard(text, fallbackTitle);
+  try {
+    const parsed = JSON.parse(match[1]);
+    if (!parsed || !Array.isArray(parsed.scenes)) throw new Error("invalid storyboard");
+    const scenes = parsed.scenes.slice(0, 10).map((candidate) => {
+      const scene = candidate && typeof candidate === "object" ? candidate : {};
+      const type = VIDEO_SCENE_TYPES.has(scene.type) ? scene.type : "equation";
+      return {
+        ...scene,
+        type,
+        heading: shortText(scene.heading, "Ideia matemática", 80),
+        caption: shortText(scene.caption, "", 150),
+        equation: shortText(scene.equation, "", 100),
+        result: shortText(scene.result, "", 100),
+        verification: shortText(scene.verification, "", 120),
+        sideLabel: shortText(scene.sideLabel, "n", 12),
+        duration: Math.max(3, Math.min(12, finiteNumber(scene.duration, 6))),
+        steps: Array.isArray(scene.steps) ? scene.steps.slice(0, 6).map((step) => shortText(step, "", 100)).filter(Boolean) : [],
+      };
+    }).filter(Boolean);
+    if (scenes.length < 2) throw new Error("short storyboard");
+    return { title: shortText(parsed.title, fallbackTitle, 70), scenes };
+  } catch {
+    return fallbackVideoStoryboard(text, fallbackTitle);
+  }
 }
 
 function wrapCanvasText(context, text, maxWidth) {
@@ -1309,9 +1385,334 @@ function wrapCanvasText(context, text, maxWidth) {
   return lines.slice(0, 7);
 }
 
-function drawPodcastFrame(context, title, slides, progress, elapsed, duration) {
+function canvasRoundRect(context, x, y, width, height, radius = 16) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+  context.beginPath();
+  context.moveTo(x + safeRadius, y);
+  context.arcTo(x + width, y, x + width, y + height, safeRadius);
+  context.arcTo(x + width, y + height, x, y + height, safeRadius);
+  context.arcTo(x, y + height, x, y, safeRadius);
+  context.arcTo(x, y, x + width, y, safeRadius);
+  context.closePath();
+}
+
+function drawCenteredText(context, text, x, y, maxWidth, lineHeight = 34, maxLines = 3) {
+  const lines = wrapCanvasText(context, shortText(text, "", 300), maxWidth).slice(0, maxLines);
+  lines.forEach((line, index) => context.fillText(line, x, y + index * lineHeight));
+}
+
+function drawDot(context, x, y, color = "#f2cb69", radius = 6) {
+  context.beginPath();
+  context.arc(x, y, radius, 0, Math.PI * 2);
+  context.fillStyle = color;
+  context.fill();
+}
+
+function drawSceneTitle(context, scene) {
+  context.fillStyle = "#f3f7f4";
+  context.font = "700 28px system-ui, sans-serif";
+  context.textAlign = "center";
+  drawCenteredText(context, scene.heading || "Ideia matemática", context.canvas.width / 2, 128, 720, 34, 2);
+  context.textAlign = "left";
+}
+
+function drawEquationScene(context, scene, localProgress) {
+  const steps = scene.steps?.length ? scene.steps : [scene.equation || "Observe a relação entre as grandezas"];
+  const visible = Math.max(1, Math.ceil(localProgress * steps.length));
+  const startY = 190 - Math.min(steps.length, 5) * 3;
+  steps.slice(0, visible).forEach((step, index) => {
+    const y = startY + index * 48;
+    context.fillStyle = index === visible - 1 ? "rgba(242, 203, 105, .18)" : "rgba(255, 255, 255, .07)";
+    canvasRoundRect(context, 150, y - 30, 554, 39, 10);
+    context.fill();
+    context.fillStyle = index === visible - 1 ? "#f2cb69" : "#dce8e0";
+    context.font = `${index === visible - 1 ? "700" : "600"} 22px system-ui, sans-serif`;
+    context.textAlign = "center";
+    context.fillText(shortText(step, "", 80), 427, y - 3);
+  });
+  context.textAlign = "left";
+}
+
+function drawSquareScene(context, scene, localProgress) {
+  const x = 150;
+  const y = 165;
+  const size = 230;
+  const grid = 10;
+  context.fillStyle = "rgba(109, 210, 166, .13)";
+  context.fillRect(x, y, size, size);
+  context.strokeStyle = "#6dd2a6";
+  context.lineWidth = 3;
+  context.strokeRect(x, y, size, size);
+  context.globalAlpha = .22;
+  context.lineWidth = 1;
+  for (let index = 1; index < grid; index += 1) {
+    const offset = size * index / grid;
+    context.beginPath(); context.moveTo(x + offset, y); context.lineTo(x + offset, y + size); context.stroke();
+    context.beginPath(); context.moveTo(x, y + offset); context.lineTo(x + size, y + offset); context.stroke();
+  }
+  context.globalAlpha = 1;
+  context.fillStyle = "#dce8e0";
+  context.font = "700 22px system-ui, sans-serif";
+  context.textAlign = "center";
+  context.fillText(`${scene.sideLabel || "n"} × ${scene.sideLabel || "n"}`, x + size / 2, y + size / 2 + 7);
+  context.fillStyle = "#9fb5a8";
+  context.font = "600 17px system-ui, sans-serif";
+  context.fillText(scene.sideLabel || "n", x + size / 2, y + size + 27);
+  context.fillText(scene.sideLabel || "n", x - 25, y + size / 2);
+
+  const remainder = Math.max(0, Math.round(finiteNumber(scene.remainder, 0)));
+  context.fillStyle = "rgba(242, 203, 105, .09)";
+  canvasRoundRect(context, 465, 180, 235, 150, 18);
+  context.fill();
+  const dots = Math.min(remainder || 8, 24);
+  const shown = Math.max(1, Math.ceil(dots * localProgress));
+  for (let index = 0; index < shown; index += 1) {
+    drawDot(context, 493 + (index % 8) * 25, 210 + Math.floor(index / 8) * 25, "#f2cb69", 5);
+  }
+  context.fillStyle = "#f2cb69";
+  context.font = "700 24px system-ui, sans-serif";
+  context.fillText(remainder ? `+ ${remainder} fora` : "grupo adicional", 582, 302);
+  if (scene.total !== undefined) {
+    context.fillStyle = "#dce8e0";
+    context.font = "700 22px system-ui, sans-serif";
+    context.fillText(`${scene.sideLabel || "n"}² + ${remainder} = ${finiteNumber(scene.total)}`, 582, 365);
+  }
+  context.textAlign = "left";
+}
+
+function drawSquareExpansionScene(context, scene, localProgress) {
+  const x = 245;
+  const y = 160;
+  const base = 205;
+  const strip = 38 * Math.min(1, localProgress * 1.8);
+  context.fillStyle = "rgba(109, 210, 166, .18)";
+  context.fillRect(x, y, base, base);
+  context.strokeStyle = "#6dd2a6";
+  context.lineWidth = 3;
+  context.strokeRect(x, y, base, base);
+  context.fillStyle = "rgba(242, 203, 105, .72)";
+  context.fillRect(x + base, y, strip, base);
+  context.fillRect(x, y + base, base, strip);
+  context.fillStyle = "#ef8f6b";
+  context.fillRect(x + base, y + base, strip, strip);
+  context.fillStyle = "#dce8e0";
+  context.font = "700 24px system-ui, sans-serif";
+  context.textAlign = "center";
+  context.fillText(`${scene.sideLabel || "n"} × ${scene.sideLabel || "n"}`, x + base / 2, y + base / 2);
+  context.fillStyle = "#f2cb69";
+  context.font = "700 20px system-ui, sans-serif";
+  context.fillText("+ n", x + base + 19, y + base / 2);
+  context.fillText("+ n", x + base / 2, y + base + 29);
+  context.fillStyle = "#ef8f6b";
+  context.fillText("+ 1", x + base + 28, y + base + 29);
+  context.fillStyle = "rgba(255, 255, 255, .08)";
+  canvasRoundRect(context, 545, 210, 230, 95, 16);
+  context.fill();
+  context.fillStyle = "#f2cb69";
+  context.font = "800 27px system-ui, sans-serif";
+  context.fillText(scene.equation || "2n + 1", 660, 265);
+  context.fillStyle = "#9fb5a8";
+  context.font = "600 16px system-ui, sans-serif";
+  context.fillText("nova borda", 660, 291);
+  context.textAlign = "left";
+}
+
+function drawGroupsScene(context, scene, localProgress) {
+  const groups = Array.isArray(scene.groups) ? scene.groups.slice(0, 4) : [];
+  const safeGroups = groups.length ? groups : [{ label: "Grupo", count: 4 }];
+  const width = 650 / safeGroups.length;
+  safeGroups.forEach((group, groupIndex) => {
+    const count = Math.max(0, Math.round(finiteNumber(group.count, 0)));
+    const visible = Math.ceil(Math.min(count, 30) * localProgress);
+    const centerX = 102 + width * groupIndex + width / 2;
+    context.fillStyle = "rgba(255, 255, 255, .06)";
+    canvasRoundRect(context, 92 + width * groupIndex, 170, width - 16, 205, 16);
+    context.fill();
+    for (let index = 0; index < visible; index += 1) {
+      const cols = 5;
+      drawDot(context, centerX - 40 + (index % cols) * 20, 215 + Math.floor(index / cols) * 21, groupIndex % 2 ? "#6dd2a6" : "#f2cb69", 5);
+    }
+    context.fillStyle = "#f3f7f4";
+    context.font = "700 20px system-ui, sans-serif";
+    context.textAlign = "center";
+    context.fillText(count > 30 ? `${count}` : `${count}`, centerX, 338);
+    context.fillStyle = "#9fb5a8";
+    context.font = "600 15px system-ui, sans-serif";
+    context.fillText(shortText(group.label, "Grupo", 22), centerX, 362);
+  });
+  context.textAlign = "left";
+}
+
+function drawBarsScene(context, scene, localProgress) {
+  const bars = Array.isArray(scene.bars) ? scene.bars.slice(0, 5) : [];
+  const safeBars = bars.length ? bars : [{ label: "Valor", value: 1 }];
+  const max = Math.max(...safeBars.map((bar) => Math.abs(finiteNumber(bar.value, 0))), 1);
+  safeBars.forEach((bar, index) => {
+    const value = finiteNumber(bar.value, 0);
+    const y = 165 + index * 52;
+    context.fillStyle = "#dce8e0";
+    context.font = "600 16px system-ui, sans-serif";
+    context.textAlign = "right";
+    context.fillText(shortText(bar.label, `Valor ${index + 1}`, 24), 205, y + 22);
+    context.fillStyle = "rgba(255, 255, 255, .08)";
+    canvasRoundRect(context, 225, y, 480, 31, 8); context.fill();
+    context.fillStyle = index % 2 ? "#6dd2a6" : "#f2cb69";
+    canvasRoundRect(context, 225, y, Math.max(6, 480 * Math.abs(value) / max * localProgress), 31, 8); context.fill();
+    context.fillStyle = "#10251c";
+    context.font = "800 16px system-ui, sans-serif";
+    context.textAlign = "left";
+    context.fillText(String(value), 237, y + 22);
+  });
+  context.textAlign = "left";
+}
+
+function drawNumberLineScene(context, scene, localProgress) {
+  const min = finiteNumber(scene.min, 0);
+  const max = finiteNumber(scene.max, min + 10) || min + 10;
+  const range = max === min ? 1 : max - min;
+  const x1 = 120;
+  const x2 = 735;
+  const y = 275;
+  context.strokeStyle = "#9fb5a8";
+  context.lineWidth = 3;
+  context.beginPath(); context.moveTo(x1, y); context.lineTo(x2, y); context.stroke();
+  for (let index = 0; index <= 10; index += 1) {
+    const x = x1 + (x2 - x1) * index / 10;
+    context.beginPath(); context.moveTo(x, y - 7); context.lineTo(x, y + 7); context.stroke();
+  }
+  const points = Array.isArray(scene.points) ? scene.points.slice(0, 8) : [];
+  points.forEach((point, index) => {
+    if (localProgress < (index + 1) / (points.length + 1)) return;
+    const value = finiteNumber(point.value, min);
+    const x = x1 + (x2 - x1) * (value - min) / range;
+    drawDot(context, Math.max(x1, Math.min(x2, x)), y, index % 2 ? "#6dd2a6" : "#f2cb69", 9);
+    context.fillStyle = "#f3f7f4";
+    context.font = "700 16px system-ui, sans-serif";
+    context.textAlign = "center";
+    context.fillText(shortText(point.label, String(value), 25), Math.max(x1, Math.min(x2, x)), y - 20);
+  });
+  context.fillStyle = "#9fb5a8";
+  context.font = "600 15px system-ui, sans-serif";
+  context.fillText(String(min), x1, y + 30);
+  context.fillText(String(max), x2, y + 30);
+  context.textAlign = "left";
+}
+
+function drawCoordinateScene(context, scene, localProgress) {
+  const left = 170; const top = 155; const width = 520; const height = 235;
+  context.strokeStyle = "rgba(255,255,255,.11)"; context.lineWidth = 1;
+  for (let index = 0; index <= 10; index += 1) {
+    const x = left + width * index / 10; const y = top + height * index / 10;
+    context.beginPath(); context.moveTo(x, top); context.lineTo(x, top + height); context.stroke();
+    context.beginPath(); context.moveTo(left, y); context.lineTo(left + width, y); context.stroke();
+  }
+  context.strokeStyle = "#9fb5a8"; context.lineWidth = 2;
+  context.beginPath(); context.moveTo(left, top + height / 2); context.lineTo(left + width, top + height / 2); context.stroke();
+  context.beginPath(); context.moveTo(left + width / 2, top); context.lineTo(left + width / 2, top + height); context.stroke();
+  const points = Array.isArray(scene.points) ? scene.points.slice(0, 20) : [];
+  const xs = points.map((point) => finiteNumber(point.x));
+  const ys = points.map((point) => finiteNumber(point.y));
+  const bound = Math.max(1, ...xs.map(Math.abs), ...ys.map(Math.abs));
+  const pixel = (point) => ({ x: left + width / 2 + finiteNumber(point.x) / bound * width * .43, y: top + height / 2 - finiteNumber(point.y) / bound * height * .43 });
+  const segments = Array.isArray(scene.segments) ? scene.segments.slice(0, 30) : [];
+  context.strokeStyle = "#6dd2a6"; context.lineWidth = 3;
+  segments.forEach((segment, index) => {
+    if (!Array.isArray(segment) || localProgress < (index + 1) / (segments.length + 1)) return;
+    const first = points[segment[0]]; const second = points[segment[1]];
+    if (!first || !second) return;
+    const a = pixel(first); const b = pixel(second);
+    context.beginPath(); context.moveTo(a.x, a.y); context.lineTo(b.x, b.y); context.stroke();
+  });
+  points.forEach((point, index) => {
+    if (localProgress < (index + 1) / (points.length + 1)) return;
+    const position = pixel(point); drawDot(context, position.x, position.y, "#f2cb69", 7);
+    context.fillStyle = "#f3f7f4"; context.font = "600 14px system-ui, sans-serif";
+    context.fillText(shortText(point.label, `(${point.x}, ${point.y})`, 20), position.x + 9, position.y - 8);
+  });
+}
+
+function drawDiagramScene(context, scene, localProgress) {
+  const nodes = Array.isArray(scene.nodes) ? scene.nodes.slice(0, 10) : [];
+  const edges = Array.isArray(scene.edges) ? scene.edges.slice(0, 15) : [];
+  const positions = new Map(nodes.map((node, index) => [String(node.id ?? index), {
+    x: 120 + Math.max(0, Math.min(1, finiteNumber(node.x, (index + 1) / (nodes.length + 1)))) * 615,
+    y: 170 + Math.max(0, Math.min(1, finiteNumber(node.y, .5))) * 190,
+  }]));
+  context.strokeStyle = "#6dd2a6"; context.lineWidth = 3;
+  edges.forEach((edge, index) => {
+    if (localProgress < (index + 1) / (edges.length + 2)) return;
+    const from = positions.get(String(edge.from)); const to = positions.get(String(edge.to));
+    if (!from || !to) return;
+    context.beginPath(); context.moveTo(from.x, from.y); context.lineTo(to.x, to.y); context.stroke();
+    if (edge.label) {
+      context.fillStyle = "#9fb5a8"; context.font = "600 13px system-ui, sans-serif"; context.textAlign = "center";
+      context.fillText(shortText(edge.label, "", 22), (from.x + to.x) / 2, (from.y + to.y) / 2 - 7);
+    }
+  });
+  nodes.forEach((node, index) => {
+    if (localProgress < (index + 1) / (nodes.length + 2)) return;
+    const position = positions.get(String(node.id ?? index));
+    context.fillStyle = index % 2 ? "#173f2f" : "#403821";
+    canvasRoundRect(context, position.x - 63, position.y - 27, 126, 54, 15); context.fill();
+    context.strokeStyle = index % 2 ? "#6dd2a6" : "#f2cb69"; context.lineWidth = 2; context.stroke();
+    context.fillStyle = "#f3f7f4"; context.font = "700 15px system-ui, sans-serif"; context.textAlign = "center";
+    context.fillText(shortText(node.label, String(node.id ?? index), 18), position.x, position.y + 5);
+  });
+  context.textAlign = "left";
+}
+
+function drawTableScene(context, scene, localProgress) {
+  const headers = Array.isArray(scene.headers) ? scene.headers.slice(0, 5).map((value) => shortText(value, "", 20)) : [];
+  const rows = Array.isArray(scene.rows) ? scene.rows.slice(0, 5) : [];
+  const columns = Math.max(1, headers.length || Math.max(1, ...rows.map((row) => Array.isArray(row) ? row.length : 0)));
+  const x = 100; const y = 165; const width = 654; const rowHeight = 40; const columnWidth = width / columns;
+  [...(headers.length ? [headers] : []), ...rows].forEach((row, rowIndex) => {
+    if (localProgress < (rowIndex + 1) / (rows.length + 2)) return;
+    for (let column = 0; column < columns; column += 1) {
+      context.fillStyle = rowIndex === 0 && headers.length ? "rgba(242,203,105,.18)" : "rgba(255,255,255,.06)";
+      context.fillRect(x + column * columnWidth, y + rowIndex * rowHeight, columnWidth, rowHeight);
+      context.strokeStyle = "rgba(255,255,255,.15)"; context.strokeRect(x + column * columnWidth, y + rowIndex * rowHeight, columnWidth, rowHeight);
+      context.fillStyle = rowIndex === 0 && headers.length ? "#f2cb69" : "#dce8e0";
+      context.font = `${rowIndex === 0 && headers.length ? "700" : "600"} 15px system-ui, sans-serif`;
+      context.textAlign = "center";
+      context.fillText(shortText(Array.isArray(row) ? row[column] : "", "", 18), x + column * columnWidth + columnWidth / 2, y + rowIndex * rowHeight + 26);
+    }
+  });
+  context.textAlign = "left";
+}
+
+function drawFinalScene(context, scene, localProgress) {
+  const pulse = 1 + Math.sin(localProgress * Math.PI) * .04;
+  context.save();
+  context.translate(427, 270); context.scale(pulse, pulse);
+  context.fillStyle = "rgba(242,203,105,.12)";
+  canvasRoundRect(context, -265, -80, 530, 160, 24); context.fill();
+  context.strokeStyle = "#f2cb69"; context.lineWidth = 3; context.stroke();
+  context.fillStyle = "#f2cb69"; context.font = "800 38px system-ui, sans-serif"; context.textAlign = "center";
+  context.fillText(shortText(scene.result, scene.equation || "Resultado", 42), 0, -8);
+  context.fillStyle = "#dce8e0"; context.font = "700 21px system-ui, sans-serif";
+  context.fillText(shortText(scene.verification, "Resultado verificado", 65), 0, 35);
+  context.restore(); context.textAlign = "left";
+}
+
+function storyboardMoment(storyboard, elapsed, duration) {
+  const weights = storyboard.scenes.map((scene) => Math.max(3, finiteNumber(scene.duration, 6)));
+  const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+  const position = duration ? elapsed / duration * totalWeight : 0;
+  let consumed = 0;
+  for (let index = 0; index < weights.length; index += 1) {
+    if (position <= consumed + weights[index] || index === weights.length - 1) {
+      return { index, localProgress: Math.max(0, Math.min(1, (position - consumed) / weights[index])) };
+    }
+    consumed += weights[index];
+  }
+  return { index: storyboard.scenes.length - 1, localProgress: 1 };
+}
+
+function drawPodcastFrame(context, storyboard, progress, elapsed, duration) {
   const { width, height } = context.canvas;
-  const slideIndex = Math.min(slides.length - 1, Math.floor(progress * slides.length));
+  const moment = storyboardMoment(storyboard, elapsed, duration);
+  const scene = storyboard.scenes[moment.index];
   const gradient = context.createLinearGradient(0, 0, width, height);
   gradient.addColorStop(0, "#0b2118");
   gradient.addColorStop(1, "#16382a");
@@ -1323,17 +1724,28 @@ function drawPodcastFrame(context, title, slides, progress, elapsed, duration) {
   context.fillText("∑ PLAYGROUND MATEMÁTICO", 48, 55);
   context.fillStyle = "#9fb5a8";
   context.font = "500 18px system-ui, sans-serif";
-  context.fillText(title.slice(0, 70), 48, 88);
+  context.fillText(storyboard.title.slice(0, 70), 48, 88);
 
-  const pulse = 12 + Math.sin(elapsed * 7) * 5;
-  context.beginPath();
-  context.arc(70, 153, pulse, 0, Math.PI * 2);
-  context.fillStyle = "rgba(242, 203, 105, .9)";
-  context.fill();
-  context.fillStyle = "#f3f7f4";
-  context.font = "600 28px system-ui, sans-serif";
-  const lines = wrapCanvasText(context, slides[slideIndex] || "", width - 150);
-  lines.forEach((line, index) => context.fillText(line, 110, 150 + index * 42));
+  drawSceneTitle(context, scene);
+  if (scene.type === "title") drawDiagramScene(context, { nodes: [{ id: "question", label: "Problema", x: .18, y: .55 }, { id: "model", label: "Modelo visual", x: .5, y: .35 }, { id: "answer", label: "Resposta", x: .82, y: .55 }], edges: [{ from: "question", to: "model" }, { from: "model", to: "answer" }] }, moment.localProgress);
+  else if (scene.type === "square") drawSquareScene(context, scene, moment.localProgress);
+  else if (scene.type === "squareExpansion") drawSquareExpansionScene(context, scene, moment.localProgress);
+  else if (scene.type === "groups") drawGroupsScene(context, scene, moment.localProgress);
+  else if (scene.type === "bars") drawBarsScene(context, scene, moment.localProgress);
+  else if (scene.type === "numberLine") drawNumberLineScene(context, scene, moment.localProgress);
+  else if (scene.type === "coordinate") drawCoordinateScene(context, scene, moment.localProgress);
+  else if (scene.type === "diagram") drawDiagramScene(context, scene, moment.localProgress);
+  else if (scene.type === "table") drawTableScene(context, scene, moment.localProgress);
+  else if (scene.type === "final") drawFinalScene(context, scene, moment.localProgress);
+  else drawEquationScene(context, scene, moment.localProgress);
+
+  if (scene.caption) {
+    context.fillStyle = "rgba(7, 22, 15, .86)";
+    canvasRoundRect(context, 110, 398, 634, 34, 10); context.fill();
+    context.fillStyle = "#dce8e0"; context.font = "600 15px system-ui, sans-serif"; context.textAlign = "center";
+    context.fillText(shortText(scene.caption, "", 92), width / 2, 421);
+    context.textAlign = "left";
+  }
 
   const barX = 48;
   const barY = height - 48;
@@ -1345,7 +1757,7 @@ function drawPodcastFrame(context, title, slides, progress, elapsed, duration) {
   context.fillStyle = "#c8d3cb";
   context.font = "500 15px system-ui, sans-serif";
   const seconds = Math.max(0, Math.ceil(duration - elapsed));
-  context.fillText(`${slideIndex + 1}/${slides.length}  ·  ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`, barX, barY - 14);
+  context.fillText(`${moment.index + 1}/${storyboard.scenes.length}  ·  ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`, barX, barY - 14);
 }
 
 function podcastAudioChunks(text, maxLength = 1_800) {
@@ -1411,9 +1823,9 @@ async function requestPodcastAudio(text) {
   return new Blob(audioParts, { type: audioParts[0]?.type || "audio/mpeg" });
 }
 
-async function createPodcastVideo(audioBlob, text, title, onProgress) {
-  if (!("MediaRecorder" in window) || (!("AudioContext" in window) && !("webkitAudioContext" in window))) {
-    throw new Error(t("Este navegador não consegue gerar o vídeo. Baixe o áudio."));
+async function createPodcastVideo(audioBlob, storyboard, onProgress) {
+  if (!("MediaRecorder" in window)) {
+    throw new Error(t("Este navegador não consegue gerar o vídeo."));
   }
 
   const canvas = document.createElement("canvas");
@@ -1421,34 +1833,38 @@ async function createPodcastVideo(audioBlob, text, title, onProgress) {
   canvas.height = 480;
   const context = canvas.getContext("2d");
   if (!context || typeof canvas.captureStream !== "function") {
-    throw new Error(t("Este navegador não consegue gerar o vídeo. Baixe o áudio."));
+    throw new Error(t("Este navegador não consegue gerar o vídeo."));
   }
 
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  const audioContext = new AudioContextClass();
-  const audioBuffer = await audioContext.decodeAudioData(await audioBlob.arrayBuffer());
-  const destination = audioContext.createMediaStreamDestination();
-  const source = audioContext.createBufferSource();
-  source.buffer = audioBuffer;
-  source.connect(destination);
-  source.connect(audioContext.destination);
+  let audioContext = null;
+  let audioBuffer = null;
+  let destination = null;
+  let source = null;
+  if (audioBlob) {
+    if (!AudioContextClass) throw new Error(t("Este navegador não consegue usar o áudio escolhido."));
+    audioContext = new AudioContextClass();
+    audioBuffer = await audioContext.decodeAudioData(await audioBlob.arrayBuffer());
+    destination = audioContext.createMediaStreamDestination();
+    source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(destination);
+    source.connect(audioContext.destination);
+  }
 
   const canvasStream = canvas.captureStream(15);
   const stream = new MediaStream([
     ...canvasStream.getVideoTracks(),
-    ...destination.stream.getAudioTracks(),
+    ...(destination?.stream.getAudioTracks() || []),
   ]);
-  const mimeType = [
-    "video/webm;codecs=vp8,opus",
-    "video/webm",
-    "video/webm;codecs=vp9,opus",
-    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
-    "video/mp4",
-  ].find((type) => MediaRecorder.isTypeSupported(type));
+  const mimeTypes = audioBlob
+    ? ["video/webm;codecs=vp8,opus", "video/webm", "video/webm;codecs=vp9,opus", "video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4"]
+    : ["video/webm;codecs=vp8", "video/webm", "video/webm;codecs=vp9", "video/mp4;codecs=avc1.42E01E", "video/mp4"];
+  const mimeType = mimeTypes.find((type) => MediaRecorder.isTypeSupported(type));
   if (!mimeType) {
     stream.getTracks().forEach((track) => track.stop());
-    await audioContext.close();
-    throw new Error(t("Este navegador não consegue gerar o vídeo. Baixe o áudio."));
+    await audioContext?.close();
+    throw new Error(t("Este navegador não consegue gerar o vídeo."));
   }
 
   const recorder = new MediaRecorder(stream, {
@@ -1461,16 +1877,21 @@ async function createPodcastVideo(audioBlob, text, title, onProgress) {
     if (event.data.size) chunks.push(event.data);
   });
 
-  const slides = podcastSlides(text);
-  const duration = audioBuffer.duration;
+  const plannedDuration = storyboard.scenes.reduce((sum, scene) => sum + Math.max(3, finiteNumber(scene.duration, 6)), 0);
+  const duration = audioBuffer?.duration || Math.max(15, Math.min(90, plannedDuration));
   let animationFrame = 0;
   let startedAt = 0;
   const draw = () => {
-    const elapsed = Math.min(duration, audioContext.currentTime - startedAt);
+    const clock = audioContext ? audioContext.currentTime : performance.now() / 1_000;
+    const elapsed = Math.min(duration, clock - startedAt);
     const progress = duration ? elapsed / duration : 0;
-    drawPodcastFrame(context, title, slides, progress, elapsed, duration);
+    drawPodcastFrame(context, storyboard, progress, elapsed, duration);
     onProgress(progress);
-    if (recorder.state === "recording") animationFrame = window.requestAnimationFrame(draw);
+    if (recorder.state === "recording" && elapsed < duration) {
+      animationFrame = window.requestAnimationFrame(draw);
+    } else if (recorder.state === "recording" && !audioBlob) {
+      recorder.stop();
+    }
   };
 
   const finished = new Promise((resolve, reject) => {
@@ -1478,14 +1899,18 @@ async function createPodcastVideo(audioBlob, text, title, onProgress) {
     recorder.addEventListener("error", () => reject(new Error(t("Não foi possível montar o vídeo."))), { once: true });
   });
 
-  drawPodcastFrame(context, title, slides, 0, 0, duration);
+  drawPodcastFrame(context, storyboard, 0, 0, duration);
   recorder.start(1_000);
-  await audioContext.resume();
-  startedAt = audioContext.currentTime;
-  source.addEventListener("ended", () => {
-    if (recorder.state === "recording") recorder.stop();
-  }, { once: true });
-  source.start();
+  if (audioContext && source) {
+    await audioContext.resume();
+    startedAt = audioContext.currentTime;
+    source.addEventListener("ended", () => {
+      if (recorder.state === "recording") recorder.stop();
+    }, { once: true });
+    source.start();
+  } else {
+    startedAt = performance.now() / 1_000;
+  }
   animationFrame = window.requestAnimationFrame(draw);
 
   try {
@@ -1493,11 +1918,11 @@ async function createPodcastVideo(audioBlob, text, title, onProgress) {
   } finally {
     window.cancelAnimationFrame(animationFrame);
     stream.getTracks().forEach((track) => track.stop());
-    await audioContext.close();
+    await audioContext?.close();
   }
 }
 
-function renderAudioControls(article, text, topic) {
+function renderAudioControls(article, text, topic, storyboard) {
   const controls = document.createElement("div");
   controls.className = "audio-controls";
   const play = document.createElement("button");
@@ -1514,11 +1939,19 @@ function renderAudioControls(article, text, topic) {
   const generateVideo = document.createElement("button");
   generateVideo.type = "button";
   generateVideo.textContent = "🎬 Gerar videoaula";
+  const chooseAudio = document.createElement("button");
+  chooseAudio.type = "button";
+  chooseAudio.textContent = "🎙️ Usar áudio próprio";
+  const audioInput = document.createElement("input");
+  audioInput.type = "file";
+  audioInput.accept = "audio/*";
+  audioInput.hidden = true;
   const status = document.createElement("small");
   status.className = "podcast-status";
   status.setAttribute("aria-live", "polite");
   let audioBlob = null;
   let audioUrl = null;
+  let selectedAudioBlob = null;
 
   const ensureAudio = async () => {
     if (audioBlob) return audioBlob;
@@ -1586,15 +2019,26 @@ function renderAudioControls(article, text, topic) {
     }
   });
 
+  chooseAudio.addEventListener("click", () => audioInput.click());
+  audioInput.addEventListener("change", () => {
+    const file = audioInput.files?.[0];
+    if (!file) return;
+    selectedAudioBlob = file;
+    chooseAudio.textContent = `🎙️ ${shortText(file.name, t("Áudio escolhido"), 28)}`;
+    status.textContent = t("Áudio próprio escolhido. Ele será usado na videoaula.");
+  });
+
   generateVideo.addEventListener("click", async () => {
     try {
       window.speechSynthesis?.cancel();
       generateAudio.disabled = true;
       generateVideo.disabled = true;
-      const blob = await ensureAudio();
-      generateVideo.disabled = true;
-      status.textContent = t("Montando videoaula… mantenha esta tela aberta.");
-      const video = await createPodcastVideo(blob, text, topic, (progress) => {
+      chooseAudio.disabled = true;
+      const videoAudio = selectedAudioBlob || audioBlob;
+      status.textContent = videoAudio
+        ? t("Montando videoaula com seu áudio… mantenha esta tela aberta.")
+        : t("Montando videoaula sem áudio… mantenha esta tela aberta.");
+      const video = await createPodcastVideo(videoAudio, storyboard, (progress) => {
         status.textContent = `${t("Montando videoaula… mantenha esta tela aberta.")} ${Math.round(progress * 100)}%`;
       });
       const videoUrl = URL.createObjectURL(video);
@@ -1610,10 +2054,11 @@ function renderAudioControls(article, text, topic) {
     } finally {
       generateAudio.disabled = Boolean(audioBlob);
       generateVideo.disabled = false;
+      chooseAudio.disabled = false;
     }
   });
 
-  controls.append(play, stop, generateAudio, generateVideo, status);
+  controls.append(play, stop, generateAudio, chooseAudio, audioInput, generateVideo, status);
   article.append(controls);
 }
 
@@ -2192,6 +2637,9 @@ async function ask(question, displayQuestion = question, mode = "ask") {
     if (buffer) consumeSseBlock(buffer, assistant.content, sources);
     const answer = assistant.content.textContent.trim();
     if (!answer) throw new Error(t("A biblioteca não retornou uma resposta."));
+    const storyboard = mode === "podcast" ? parseVideoStoryboard(answer, displayQuestion) : null;
+    const visibleAnswer = mode === "podcast" ? stripVideoStoryboard(answer) : answer;
+    assistant.content.textContent = visibleAnswer;
 
     state.messages.push({ role: "assistant", content: answer });
     const examRendered = mode === "exam" && renderExam(
@@ -2201,7 +2649,7 @@ async function ask(question, displayQuestion = question, mode = "ask") {
       displayQuestion,
     );
     if (!examRendered) renderMathIn(assistant.content);
-    if (mode === "podcast") renderAudioControls(assistant.article, answer, displayQuestion);
+    if (mode === "podcast") renderAudioControls(assistant.article, visibleAnswer, displayQuestion, storyboard);
     if (mode === "mindmap") renderMindMap(assistant.article, answer, displayQuestion);
     renderSources(assistant.article, sources);
     renderExportControls(assistant.article, displayQuestion, mode, {

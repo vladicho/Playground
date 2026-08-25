@@ -66,7 +66,7 @@ function isClientMessage(value: unknown): value is ClientMessage {
     (record.role === "user" || record.role === "assistant") &&
     typeof record.content === "string" &&
     record.content.trim().length > 0 &&
-    record.content.length <= 4_000
+    record.content.length <= 12_000
   );
 }
 
