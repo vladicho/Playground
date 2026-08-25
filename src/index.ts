@@ -258,9 +258,20 @@ async function melottsAudio(body: PodcastAudioBody, env: Env): Promise<Response>
   if (typeof result === "object" && result !== null && "audio" in result) {
     const audio = (result as { audio: unknown }).audio;
     if (typeof audio === "string" && audio.length > 0) {
-      const binary = atob(audio);
-      const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-      return new Response(bytes, { headers: audioHeaders("melotts") });
+      // Repassar o Base64 evita decodificar milhões de bytes em JavaScript no
+      // Worker, operação que pode exceder o limite de CPU. O navegador faz a
+      // conversão uma única vez antes de tocar ou montar o vídeo.
+      return new Response(audio, {
+        headers: {
+          "content-type": "text/plain; charset=us-ascii",
+          "cache-control": "private, no-store",
+          "content-disposition": 'inline; filename="podcast-playground.mp3.base64"',
+          "x-content-type-options": "nosniff",
+          "x-playground-tts": "melotts",
+          "x-playground-audio-encoding": "base64",
+          "x-playground-audio-type": "audio/mpeg",
+        },
+      });
     }
   }
   throw new Error("MeloTTS não retornou áudio.");
@@ -291,28 +302,30 @@ async function podcastAudio(request: Request, env: Env): Promise<Response> {
     return jsonError("Envie um roteiro válido em português ou espanhol.", 400);
   }
 
-  let grokError: unknown = null;
-  try {
-    const result = await env.AI.run("xai/grok-tts", {
-      text: body.text,
-      language: body.language === "es" ? "es-ES" : "pt-BR",
-      voice_id: body.language === "es" ? "ara" : "sal",
-      text_normalization: true,
-    });
-    const audioUrl = generatedAudioUrl(result);
-    if (!audioUrl) throw new Error("Grok TTS não retornou uma URL de áudio.");
+  let grokError: unknown = new Error("Grok TTS desativado; usando MeloTTS.");
+  if (env.GROK_TTS_ENABLED === "true") {
+    try {
+      const result = await env.AI.run("xai/grok-tts", {
+        text: body.text,
+        language: body.language === "es" ? "es-ES" : "pt-BR",
+        voice_id: body.language === "es" ? "ara" : "sal",
+        text_normalization: true,
+      });
+      const audioUrl = generatedAudioUrl(result);
+      if (!audioUrl) throw new Error("Grok TTS não retornou uma URL de áudio.");
 
-    const response = await fetch(audioUrl);
-    if (!response.ok || !response.body) throw new Error("Falha ao recuperar o áudio gerado.");
+      const response = await fetch(audioUrl);
+      if (!response.ok || !response.body) throw new Error("Falha ao recuperar o áudio gerado.");
 
-    return new Response(response.body, {
-      headers: {
-        ...audioHeaders("grok"),
-        "content-type": response.headers.get("content-type") || "audio/mpeg",
-      },
-    });
-  } catch (error) {
-    grokError = error;
+      return new Response(response.body, {
+        headers: {
+          ...audioHeaders("grok"),
+          "content-type": response.headers.get("content-type") || "audio/mpeg",
+        },
+      });
+    } catch (error) {
+      grokError = error;
+    }
   }
 
   try {
