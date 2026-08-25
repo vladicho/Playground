@@ -249,7 +249,7 @@ async function melottsAudio(body: PodcastAudioBody, env: Env): Promise<Response>
   const result = await env.AI.run("@cf/myshell-ai/melotts", {
     prompt: body.text,
     // MeloTTS não oferece português; espanhol é o fallback fonético mais próximo.
-    lang: "es",
+    lang: "ES",
   });
 
   if (result instanceof Uint8Array) {
