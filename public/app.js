@@ -1348,11 +1348,36 @@ function drawPodcastFrame(context, title, slides, progress, elapsed, duration) {
   context.fillText(`${slideIndex + 1}/${slides.length}  ·  ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`, barX, barY - 14);
 }
 
-async function requestPodcastAudio(text) {
+function podcastAudioChunks(text, maxLength = 1_800) {
+  const clean = podcastPlainText(text);
+  if (clean.length <= maxLength) return [clean];
+
+  const chunks = [];
+  let remaining = clean;
+  while (remaining.length > maxLength) {
+    const window = remaining.slice(0, maxLength + 1);
+    const sentenceCut = Math.max(
+      window.lastIndexOf(". "),
+      window.lastIndexOf("! "),
+      window.lastIndexOf("? "),
+      window.lastIndexOf("; "),
+    );
+    const wordCut = window.lastIndexOf(" ");
+    const cut = sentenceCut >= Math.floor(maxLength * 0.55)
+      ? sentenceCut + 1
+      : wordCut > 0 ? wordCut : maxLength;
+    chunks.push(remaining.slice(0, cut).trim());
+    remaining = remaining.slice(cut).trim();
+  }
+  if (remaining) chunks.push(remaining);
+  return chunks;
+}
+
+async function requestPodcastAudioChunk(text) {
   const response = await fetch("/api/podcast/audio", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ text: podcastPlainText(text), language: getLanguage() }),
+    body: JSON.stringify({ text, language: getLanguage() }),
   });
   if (!response.ok) {
     const data = await response.json().catch(() => null);
@@ -1375,6 +1400,15 @@ async function requestPodcastAudio(text) {
     return new Blob([bytes], { type: audioType });
   }
   return response.blob();
+}
+
+async function requestPodcastAudio(text) {
+  const chunks = podcastAudioChunks(text);
+  const audioParts = [];
+  for (const chunk of chunks) {
+    audioParts.push(await requestPodcastAudioChunk(chunk));
+  }
+  return new Blob(audioParts, { type: audioParts[0]?.type || "audio/mpeg" });
 }
 
 async function createPodcastVideo(audioBlob, text, title, onProgress) {
