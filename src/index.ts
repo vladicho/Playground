@@ -222,6 +222,50 @@ function parsePodcastAudioBody(value: unknown): PodcastAudioBody | null {
   return { text, language: record.language };
 }
 
+function generatedAudioUrl(value: unknown): string | null {
+  if (typeof value !== "object" || value === null) return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.audio === "string" && record.audio.startsWith("https://")) {
+    return record.audio;
+  }
+  if (typeof record.result === "object" && record.result !== null) {
+    const nested = (record.result as Record<string, unknown>).audio;
+    if (typeof nested === "string" && nested.startsWith("https://")) return nested;
+  }
+  return null;
+}
+
+function audioHeaders(engine: "grok" | "melotts"): HeadersInit {
+  return {
+    "content-type": "audio/mpeg",
+    "cache-control": "private, no-store",
+    "content-disposition": 'inline; filename="podcast-playground.mp3"',
+    "x-content-type-options": "nosniff",
+    "x-playground-tts": engine,
+  };
+}
+
+async function melottsAudio(body: PodcastAudioBody, env: Env): Promise<Response> {
+  const result = await env.AI.run("@cf/myshell-ai/melotts", {
+    prompt: body.text,
+    // MeloTTS não oferece português; espanhol é o fallback fonético mais próximo.
+    lang: "es",
+  });
+
+  if (result instanceof Uint8Array) {
+    return new Response(result, { headers: audioHeaders("melotts") });
+  }
+  if (typeof result === "object" && result !== null && "audio" in result) {
+    const audio = (result as { audio: unknown }).audio;
+    if (typeof audio === "string" && audio.length > 0) {
+      const binary = atob(audio);
+      const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+      return new Response(bytes, { headers: audioHeaders("melotts") });
+    }
+  }
+  throw new Error("MeloTTS não retornou áudio.");
+}
+
 async function podcastAudio(request: Request, env: Env): Promise<Response> {
   if (request.method !== "POST") {
     return new Response(null, {
@@ -247,6 +291,7 @@ async function podcastAudio(request: Request, env: Env): Promise<Response> {
     return jsonError("Envie um roteiro válido em português ou espanhol.", 400);
   }
 
+  let grokError: unknown = null;
   try {
     const result = await env.AI.run("xai/grok-tts", {
       text: body.text,
@@ -254,29 +299,30 @@ async function podcastAudio(request: Request, env: Env): Promise<Response> {
       voice_id: body.language === "es" ? "ara" : "sal",
       text_normalization: true,
     });
-    const audioUrl = typeof result === "object" && result !== null && "audio" in result
-      ? String((result as { audio: unknown }).audio)
-      : "";
-    if (!audioUrl.startsWith("https://")) {
-      throw new Error("Workers AI não retornou áudio.");
-    }
+    const audioUrl = generatedAudioUrl(result);
+    if (!audioUrl) throw new Error("Grok TTS não retornou uma URL de áudio.");
 
     const response = await fetch(audioUrl);
     if (!response.ok || !response.body) throw new Error("Falha ao recuperar o áudio gerado.");
 
     return new Response(response.body, {
       headers: {
+        ...audioHeaders("grok"),
         "content-type": response.headers.get("content-type") || "audio/mpeg",
-        "cache-control": "private, no-store",
-        "content-disposition": 'inline; filename="podcast-playground.mp3"',
-        "x-content-type-options": "nosniff",
       },
     });
   } catch (error) {
+    grokError = error;
+  }
+
+  try {
+    return await melottsAudio(body, env);
+  } catch (fallbackError) {
     console.error(
       JSON.stringify({
         message: "podcast audio generation failed",
-        error: error instanceof Error ? error.message : String(error),
+        grokError: grokError instanceof Error ? grokError.message : String(grokError),
+        fallbackError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
       }),
     );
     return jsonError("Não foi possível gerar o áudio do podcast agora.", 502);
