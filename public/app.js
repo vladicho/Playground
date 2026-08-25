@@ -1358,6 +1358,22 @@ async function requestPodcastAudio(text) {
     const data = await response.json().catch(() => null);
     throw new Error(t(data?.error || "Não foi possível gerar o áudio do podcast agora."));
   }
+  if (response.headers.get("x-playground-audio-encoding") === "base64") {
+    const base64 = (await response.text()).trim();
+    if (!base64) throw new Error(t("Não foi possível gerar o áudio do podcast agora."));
+    const audioType = response.headers.get("x-playground-audio-type") || "audio/mpeg";
+    let bytes;
+    if (typeof Uint8Array.fromBase64 === "function") {
+      bytes = Uint8Array.fromBase64(base64);
+    } else {
+      const binary = atob(base64);
+      bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+    }
+    return new Blob([bytes], { type: audioType });
+  }
   return response.blob();
 }
 
