@@ -1785,11 +1785,11 @@ function podcastAudioChunks(text, maxLength = 1_800) {
   return chunks;
 }
 
-async function requestPodcastAudioChunk(text) {
+async function requestPodcastAudioChunk(text, previousText = "", nextText = "") {
   const response = await fetch("/api/podcast/audio", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ text, language: getLanguage() }),
+    body: JSON.stringify({ text, language: getLanguage(), previousText, nextText }),
   });
   if (!response.ok) {
     const data = await response.json().catch(() => null);
@@ -1817,8 +1817,12 @@ async function requestPodcastAudioChunk(text) {
 async function requestPodcastAudio(text) {
   const chunks = podcastAudioChunks(text);
   const audioParts = [];
-  for (const chunk of chunks) {
-    audioParts.push(await requestPodcastAudioChunk(chunk));
+  for (let index = 0; index < chunks.length; index += 1) {
+    audioParts.push(await requestPodcastAudioChunk(
+      chunks[index],
+      chunks[index - 1] || "",
+      chunks[index + 1] || "",
+    ));
   }
   return new Blob(audioParts, { type: audioParts[0]?.type || "audio/mpeg" });
 }

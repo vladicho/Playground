@@ -32,6 +32,8 @@ type ExactPageRequest = {
 type PodcastAudioBody = {
   text: string;
   language: "pt" | "es";
+  previousText: string;
+  nextText: string;
 };
 
 type RequestIdentity = {
@@ -210,16 +212,31 @@ async function exactPageResponse(
 
 function parsePodcastAudioBody(value: unknown): PodcastAudioBody | null {
   if (typeof value !== "object" || value === null) return null;
-  const record = value as { text?: unknown; language?: unknown };
+  const record = value as {
+    text?: unknown;
+    language?: unknown;
+    previousText?: unknown;
+    nextText?: unknown;
+  };
   if (typeof record.text !== "string") return null;
   if (record.language !== "pt" && record.language !== "es") return null;
 
-  const text = record.text
+  const cleanText = (text: string) => text
     .replace(/[*_#`]/g, "")
     .replace(/\s+/g, " ")
     .trim();
+  const text = cleanText(record.text);
   if (text.length < 1 || text.length > 6_000) return null;
-  return { text, language: record.language };
+
+  const previousText = typeof record.previousText === "string"
+    ? cleanText(record.previousText)
+    : "";
+  const nextText = typeof record.nextText === "string"
+    ? cleanText(record.nextText)
+    : "";
+  if (previousText.length > 2_000 || nextText.length > 2_000) return null;
+
+  return { text, language: record.language, previousText, nextText };
 }
 
 function generatedAudioUrl(value: unknown): string | null {
@@ -235,7 +252,7 @@ function generatedAudioUrl(value: unknown): string | null {
   return null;
 }
 
-function audioHeaders(engine: "grok" | "aura" | "melotts"): HeadersInit {
+function audioHeaders(engine: "elevenlabs" | "grok" | "aura" | "melotts"): HeadersInit {
   return {
     "content-type": "audio/mpeg",
     "cache-control": "private, no-store",
@@ -243,6 +260,48 @@ function audioHeaders(engine: "grok" | "aura" | "melotts"): HeadersInit {
     "x-content-type-options": "nosniff",
     "x-playground-tts": engine,
   };
+}
+
+async function elevenLabsAudio(body: PodcastAudioBody, env: Env): Promise<Response> {
+  const apiKey = env.ELEVENLABS_API_KEY?.trim();
+  const voiceId = env.ELEVENLABS_VOICE_ID?.trim() || "fhtZMBwha5du5OxuvexO";
+  const modelId = env.ELEVENLABS_MODEL_ID?.trim() || "eleven_multilingual_v2";
+  if (!apiKey) throw new Error("ElevenLabs não configurada.");
+  if (!/^[A-Za-z0-9_-]{10,64}$/.test(voiceId)) {
+    throw new Error("O identificador da voz da ElevenLabs é inválido.");
+  }
+
+  const requestBody: Record<string, unknown> = {
+    text: body.text,
+    model_id: modelId,
+  };
+  if (body.previousText) requestBody.previous_text = body.previousText;
+  if (body.nextText) requestBody.next_text = body.nextText;
+
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
+    {
+      method: "POST",
+      headers: {
+        accept: "audio/mpeg",
+        "content-type": "application/json",
+        "xi-api-key": apiKey,
+      },
+      body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(60_000),
+    },
+  );
+
+  if (!response.ok || !response.body) {
+    throw new Error(`ElevenLabs TTS falhou (${response.status}).`);
+  }
+
+  return new Response(response.body, {
+    headers: {
+      ...audioHeaders("elevenlabs"),
+      "content-type": response.headers.get("content-type") || "audio/mpeg",
+    },
+  });
 }
 
 async function auraAudio(body: PodcastAudioBody, env: Env): Promise<Response> {
@@ -316,10 +375,20 @@ async function podcastAudio(request: Request, env: Env): Promise<Response> {
   } catch {
     return jsonError("JSON inválido.", 400);
   }
+  if (JSON.stringify(rawBody).length > 16_000) {
+    return jsonError("O roteiro excedeu o limite permitido.", 413);
+  }
 
   const body = parsePodcastAudioBody(rawBody);
   if (!body) {
     return jsonError("Envie um roteiro válido em português ou espanhol.", 400);
+  }
+
+  let elevenLabsError: unknown = null;
+  try {
+    return await elevenLabsAudio(body, env);
+  } catch (error) {
+    elevenLabsError = error;
   }
 
   let grokError: unknown = new Error("Grok TTS desativado; usando MeloTTS.");
@@ -361,6 +430,7 @@ async function podcastAudio(request: Request, env: Env): Promise<Response> {
     console.error(
       JSON.stringify({
         message: "podcast audio generation failed",
+        elevenLabsError: elevenLabsError instanceof Error ? elevenLabsError.message : String(elevenLabsError),
         grokError: grokError instanceof Error ? grokError.message : String(grokError),
         auraError: auraError instanceof Error ? auraError.message : String(auraError),
         fallbackError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),

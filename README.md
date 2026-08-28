@@ -10,8 +10,8 @@ Cloudflare AI Search.
 - Respostas transmitidas por Server-Sent Events.
 - Interface em português e espanhol, com idioma persistido no navegador.
 - Modos de estudo: resumo, quiz, flashcards, mapa mental e roteiro de podcast
-  com leitura local, MP3 gerado pelo Workers AI e videoaula MP4/WebM com slides
-  e legendas produzida no navegador.
+  com leitura local, MP3 gerado pela ElevenLabs (com reservas no Workers AI) e
+  videoaula MP4/WebM com cenas didáticas produzida no navegador.
 - Mapa mental gráfico com zoom e exportação em PNG.
 - Fórmulas em LaTeX renderizadas localmente com MathML e botão para copiar.
 - Exportação de respostas e materiais pelo diálogo Imprimir / Salvar PDF.
@@ -52,6 +52,20 @@ Conecte este repositório ao Workers Builds e use:
 
 Configure o domínio `playground.lugarerrado.com` no Worker e proteja-o com
 Cloudflare Access.
+
+## Narração com ElevenLabs
+
+O endpoint de áudio usa a ElevenLabs como provedor principal, com Aura e
+MeloTTS como reservas automáticas. A chave deve permanecer somente nos Secrets
+do Worker:
+
+```bash
+npx wrangler secret put ELEVENLABS_API_KEY --name playground-rag
+```
+
+A voz padrão é `fhtZMBwha5du5OxuvexO` e o modelo padrão é
+`eleven_multilingual_v2`. Os blocos de um roteiro longo enviam o contexto
+anterior e seguinte para preservar a continuidade da narração.
 
 ## D1 para usuários e cotas
 
