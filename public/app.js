@@ -1795,6 +1795,7 @@ async function requestPodcastAudioChunk(text, previousText = "", nextText = "") 
     const data = await response.json().catch(() => null);
     throw new Error(t(data?.error || "Não foi possível gerar o áudio do podcast agora."));
   }
+  const engine = response.headers.get("x-playground-tts") || "unknown";
   if (response.headers.get("x-playground-audio-encoding") === "base64") {
     const base64 = (await response.text()).trim();
     if (!base64) throw new Error(t("Não foi possível gerar o áudio do podcast agora."));
@@ -1809,22 +1810,31 @@ async function requestPodcastAudioChunk(text, previousText = "", nextText = "") 
         bytes[index] = binary.charCodeAt(index);
       }
     }
-    return new Blob([bytes], { type: audioType });
+    return { blob: new Blob([bytes], { type: audioType }), engine };
   }
-  return response.blob();
+  return { blob: await response.blob(), engine };
 }
 
 async function requestPodcastAudio(text) {
   const chunks = podcastAudioChunks(text);
   const audioParts = [];
+  let engine = "";
   for (let index = 0; index < chunks.length; index += 1) {
-    audioParts.push(await requestPodcastAudioChunk(
+    const part = await requestPodcastAudioChunk(
       chunks[index],
       chunks[index - 1] || "",
       chunks[index + 1] || "",
-    ));
+    );
+    if (engine && part.engine !== engine) {
+      throw new Error(t("A narração mudou de provedor durante a geração. Tente novamente."));
+    }
+    engine = part.engine;
+    audioParts.push(part.blob);
   }
-  return new Blob(audioParts, { type: audioParts[0]?.type || "audio/mpeg" });
+  return {
+    blob: new Blob(audioParts, { type: audioParts[0]?.type || "audio/mpeg" }),
+    engine,
+  };
 }
 
 async function createPodcastVideo(audioBlob, storyboard, onProgress) {
@@ -1931,8 +1941,7 @@ function renderAudioControls(article, text, topic, storyboard) {
   controls.className = "audio-controls";
   const play = document.createElement("button");
   play.type = "button";
-  play.textContent = "▶ Ouvir roteiro";
-  play.disabled = !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window);
+  play.textContent = t("▶ Ouvir com ElevenLabs");
   const stop = document.createElement("button");
   stop.type = "button";
   stop.textContent = "■ Parar";
@@ -1955,6 +1964,7 @@ function renderAudioControls(article, text, topic, storyboard) {
   status.setAttribute("aria-live", "polite");
   let audioBlob = null;
   let audioUrl = null;
+  let audioPlayer = null;
   let selectedAudioBlob = null;
 
   const ensureAudio = async () => {
@@ -1963,20 +1973,23 @@ function renderAudioControls(article, text, topic, storyboard) {
     generateVideo.disabled = true;
     status.textContent = t("Gerando narração…");
     try {
-      audioBlob = await requestPodcastAudio(text);
+      const generated = await requestPodcastAudio(text);
+      audioBlob = generated.blob;
       audioUrl = URL.createObjectURL(audioBlob);
-      const player = document.createElement("audio");
-      player.controls = true;
-      player.preload = "metadata";
-      player.src = audioUrl;
-      player.className = "podcast-player";
+      audioPlayer = document.createElement("audio");
+      audioPlayer.controls = true;
+      audioPlayer.preload = "metadata";
+      audioPlayer.src = audioUrl;
+      audioPlayer.className = "podcast-player";
       const download = document.createElement("a");
       download.href = audioUrl;
       download.download = "podcast-playground.mp3";
       download.className = "podcast-download";
       download.textContent = t("Baixar MP3");
-      controls.after(player, download);
-      status.textContent = t("Áudio pronto.");
+      controls.after(audioPlayer, download);
+      status.textContent = generated.engine === "elevenlabs"
+        ? t("Áudio pronto com ElevenLabs.")
+        : `${t("Áudio pronto.")} (${generated.engine})`;
       return audioBlob;
     } finally {
       generateAudio.disabled = Boolean(audioBlob);
@@ -1990,27 +2003,24 @@ function renderAudioControls(article, text, topic, storyboard) {
     if (activeSpeech?.controls === controls) activeSpeech = null;
   };
 
-  play.addEventListener("click", () => {
-    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
-    window.speechSynthesis.cancel();
-    const spokenText = podcastPlainText(text);
-    const utterance = new SpeechSynthesisUtterance(spokenText);
-    utterance.lang = getLocale();
-    utterance.rate = 1;
-    const voice = window.speechSynthesis
-      .getVoices()
-      .find((candidate) => candidate.lang.toLowerCase().startsWith(getLanguage() === "es" ? "es" : "pt-br"));
-    if (voice) utterance.voice = voice;
-    utterance.addEventListener("end", reset, { once: true });
-    utterance.addEventListener("error", reset, { once: true });
-    activeSpeech = { utterance, controls };
-    play.disabled = true;
-    stop.disabled = false;
-    window.speechSynthesis.speak(utterance);
+  play.addEventListener("click", async () => {
+    try {
+      await ensureAudio();
+      if (!audioPlayer) return;
+      await audioPlayer.play();
+      audioPlayer.addEventListener("ended", reset, { once: true });
+      activeSpeech = { player: audioPlayer, controls };
+      play.disabled = true;
+      stop.disabled = false;
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : t("Não foi possível gerar o áudio do podcast agora.");
+      reset();
+    }
   });
 
   stop.addEventListener("click", () => {
-    window.speechSynthesis.cancel();
+    audioPlayer?.pause();
+    if (audioPlayer) audioPlayer.currentTime = 0;
     reset();
   });
 
@@ -2034,7 +2044,8 @@ function renderAudioControls(article, text, topic, storyboard) {
 
   generateVideo.addEventListener("click", async () => {
     try {
-      window.speechSynthesis?.cancel();
+      activeSpeech?.player?.pause();
+      reset();
       generateAudio.disabled = true;
       generateVideo.disabled = true;
       chooseAudio.disabled = true;

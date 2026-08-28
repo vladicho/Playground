@@ -42,6 +42,13 @@ type PodcastAudioBody = {
   nextText: string;
 };
 
+type LocalArithmetic = {
+  left: number;
+  right: number;
+  operator: "+" | "-" | "×" | "÷";
+  result: number;
+};
+
 type RequestIdentity = {
   id: string;
   email: string | null;
@@ -88,6 +95,140 @@ function parseChatBody(value: unknown): ChatBody | null {
   if (messages.at(-1)?.role !== "user") return null;
 
   return { messages };
+}
+
+function parseLocalArithmetic(messages: ClientMessage[]): LocalArithmetic | null {
+  const latest = messages.at(-1)?.content ?? "";
+  const directQuestion = latest.trim().replace(/[?¿]\s*$/u, "");
+  const isPodcast = /VIDEOAULA_JSON/iu.test(latest);
+  const candidates = isPodcast
+    ? [...latest.matchAll(/["“]([^"“”\n]{1,120})["”]/gu)]
+        .flatMap((match) => match[1] ? [match[1]] : [])
+    : [directQuestion];
+
+  for (const candidate of candidates) {
+    const match = candidate.trim().match(
+      /^(-?\d+(?:[.,]\d+)?)\s*([+\-−*×xX/÷])\s*(-?\d+(?:[.,]\d+)?)$/u,
+    );
+    if (!match) continue;
+
+    const leftValue = match[1];
+    const rawOperator = match[2];
+    const rightValue = match[3];
+    if (!leftValue || !rawOperator || !rightValue) continue;
+
+    const left = Number(leftValue.replace(",", "."));
+    const right = Number(rightValue.replace(",", "."));
+    if (!Number.isFinite(left) || !Number.isFinite(right)) continue;
+
+    const operator = rawOperator === "+"
+      ? "+"
+      : rawOperator === "-" || rawOperator === "−"
+        ? "-"
+        : rawOperator === "/" || rawOperator === "÷"
+          ? "÷"
+          : "×";
+    if (operator === "÷" && right === 0) continue;
+
+    const rawResult = operator === "+"
+      ? left + right
+      : operator === "-"
+        ? left - right
+        : operator === "×"
+          ? left * right
+          : left / right;
+    const result = Number(rawResult.toPrecision(12));
+    if (Number.isFinite(result)) return { left, right, operator, result };
+  }
+
+  return null;
+}
+
+function localNumber(value: number): string {
+  return String(value).replace(".", ",");
+}
+
+function localArithmeticAnswer(
+  arithmetic: LocalArithmetic,
+  messages: ClientMessage[],
+): string {
+  const latest = messages.at(-1)?.content ?? "";
+  const isPodcast = /VIDEOAULA_JSON/iu.test(latest);
+  const isSpanish = /\b(?:Crea|guion|documentos recuperados|tres puntos)\b/iu.test(latest);
+  const left = localNumber(arithmetic.left);
+  const right = localNumber(arithmetic.right);
+  const result = localNumber(arithmetic.result);
+  const equation = `${left} ${arithmetic.operator} ${right} = ${result}`;
+
+  if (!isPodcast) {
+    return isSpanish
+      ? `Este cálculo se realizó directamente, sin usar fuentes de la biblioteca.\n\n$$${equation}$$\n\nRespuesta final: ${result}.`
+      : `Este cálculo foi realizado diretamente, sem usar fontes da biblioteca.\n\n$$${equation}$$\n\nResposta final: ${result}.`;
+  }
+
+  const operation = arithmetic.operator === "+"
+    ? (isSpanish ? "sumar" : "somar")
+    : arithmetic.operator === "-"
+      ? (isSpanish ? "restar" : "subtrair")
+      : arithmetic.operator === "×"
+        ? (isSpanish ? "multiplicar" : "multiplicar")
+        : (isSpanish ? "dividir" : "dividir");
+  const groups = arithmetic.operator === "+"
+    && Number.isInteger(arithmetic.left)
+    && Number.isInteger(arithmetic.right)
+    && arithmetic.left >= 0
+    && arithmetic.right >= 0
+    && arithmetic.left <= 20
+    && arithmetic.right <= 20
+      ? [
+          { label: isSpanish ? "Primer grupo" : "Primeiro grupo", count: arithmetic.left },
+          { label: isSpanish ? "Segundo grupo" : "Segundo grupo", count: arithmetic.right },
+        ]
+      : null;
+  const storyboard = {
+    title: equation,
+    scenes: [
+      {
+        type: "title",
+        heading: isSpanish ? `¿Cuánto es ${left} ${arithmetic.operator} ${right}?` : `Quanto é ${left} ${arithmetic.operator} ${right}?`,
+        caption: isSpanish ? "Vamos a representar la operación." : "Vamos representar a operação.",
+        duration: 4,
+      },
+      groups
+        ? {
+            type: "groups",
+            heading: isSpanish ? "Juntando los grupos" : "Juntando os grupos",
+            groups,
+            caption: isSpanish ? "Los dos grupos forman una sola cantidad." : "Os dois grupos formam uma única quantidade.",
+            duration: 6,
+          }
+        : {
+            type: "equation",
+            heading: isSpanish ? "Representando la operación" : "Representando a operação",
+            steps: [`${left} ${arithmetic.operator} ${right}`, equation],
+            duration: 6,
+          },
+      {
+        type: "equation",
+        heading: isSpanish ? "Cálculo" : "Cálculo",
+        steps: [`${left} ${arithmetic.operator} ${right}`, equation],
+        caption: `${operation}: ${equation}`,
+        duration: 6,
+      },
+      {
+        type: "final",
+        heading: isSpanish ? "Resultado verificado" : "Resultado verificado",
+        result,
+        verification: equation,
+        duration: 5,
+      },
+    ],
+  };
+
+  const script = isSpanish
+    ? `Este episodio fue calculado directamente y no utilizó fuentes de la biblioteca.\n\nPresentador: Hoy vamos a entender cuánto es ${left} ${arithmetic.operator} ${right}.\n\nEspecialista: La operación pide ${operation} ${left} y ${right}. Al representar las cantidades y efectuar el cálculo, obtenemos ${result}.\n\nPresentador: Entonces ${equation}.\n\nTres puntos para revisar:\n1. Identifica la operación.\n2. Representa las cantidades.\n3. Comprueba el resultado.\n\nRespuesta final: ${result}.`
+    : `Este episódio foi calculado diretamente e não utilizou fontes da biblioteca.\n\nApresentador: Hoje vamos entender quanto é ${left} ${arithmetic.operator} ${right}.\n\nEspecialista: A operação pede para ${operation} ${left} e ${right}. Ao representar as quantidades e efetuar o cálculo, obtemos ${result}.\n\nApresentador: Portanto, ${equation}.\n\nTrês pontos para revisar:\n1. Identifique a operação.\n2. Represente as quantidades.\n3. Verifique o resultado.\n\nResposta final: ${result}.`;
+  return `${script}\n\nVIDEOAULA_JSON\n${JSON.stringify(storyboard)}\nFIM_VIDEOAULA_JSON`;
 }
 
 function parseExactPageRequest(messages: ClientMessage[]): ExactPageRequest | null {
@@ -395,6 +536,21 @@ async function podcastAudio(request: Request, env: Env): Promise<Response> {
     return await elevenLabsAudio(body, env);
   } catch (error) {
     elevenLabsError = error;
+  }
+
+  if (body.language === "pt") {
+    const providerError = elevenLabsError instanceof Error
+      ? elevenLabsError.message
+      : String(elevenLabsError);
+    console.error(JSON.stringify({
+      message: "ElevenLabs podcast generation failed",
+      error: providerError,
+    }));
+    const status = providerError.match(/\((\d{3})\)/u)?.[1];
+    return jsonError(
+      `A ElevenLabs não gerou o áudio${status ? ` (erro ${status})` : ""}. Verifique a chave, a permissão Text to Speech, a voz selecionada e a cota da conta.`,
+      502,
+    );
   }
 
   let grokError: unknown = new Error("Grok TTS desativado; usando MeloTTS.");
@@ -747,6 +903,14 @@ export default {
     if (reservation) {
       const limitResponse = usageLimitResponse(reservation);
       if (limitResponse) return limitResponse;
+    }
+
+    const localArithmetic = parseLocalArithmetic(body.messages);
+    if (localArithmetic) {
+      const answer = localArithmeticAnswer(localArithmetic, body.messages);
+      console.log(JSON.stringify({ message: "local arithmetic completed", path: url.pathname }));
+      ctx.waitUntil(recordUsageOutcome(env, reservation, "success"));
+      return sseTextResponse(answer, [], usageHeaders(reservation));
     }
 
     try {
